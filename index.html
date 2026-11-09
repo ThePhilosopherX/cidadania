@@ -752,7 +752,11 @@ function bindInstall(){
 }
 function setupPWA(){
   window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();S.installEvt=e;scheduleRender()});
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+  if("serviceWorker" in navigator){
+    const tinha=!!navigator.serviceWorker.controller; let recarregou=false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{if(tinha&&!recarregou){recarregou=true;location.reload()}});
+    navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});
+  }
 }
 const DICAS=[{t:"Ouvidoria tem prazo",d:"A Lei 13.460/2017 obriga os órgãos públicos a responder manifestações em até 30 dias, prorrogáveis uma vez por igual período."},{t:"Vereador também é canal",d:"A Câmara Municipal fiscaliza a prefeitura. Um requerimento de informação assinado por vereador obriga a prefeitura a responder."},{t:"Você pode propor leis",d:"Projetos de iniciativa popular municipal precisam de assinaturas de 5% do eleitorado da cidade (Constituição, art. 29, XIII)."}];
 function dica(){return DICAS[new Date().getDate()%DICAS.length]}
