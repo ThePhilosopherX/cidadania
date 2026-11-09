@@ -1,5 +1,5 @@
 // Cidadania: funciona offline guardando o app no aparelho.
-const VERSAO = "cidadania-44355ee150";
+const VERSAO = "cidadania-dfdaf481b2";
 const ESSENCIAIS = ["./", "index.html", "manifest.webmanifest", "vendor/nostr.bundle.js", "icons/icon-192.png", "icons/icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSAO).then(c => c.addAll(ESSENCIAIS)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSAO).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

@@ -319,6 +319,19 @@ details.acc .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10p
   #view .list:has(> .prop){display:grid;grid-template-columns:1fr 1fr}
   #view .list:has(> .prop) > *{border-top:1px solid var(--line)}
 }
+/* Ilustrações */
+.cat-ico{flex:none;display:block;border-radius:12px}
+.cat-grid button .cat-ico{margin-bottom:2px}
+.calcada{display:block;border-radius:6px;margin-top:-6px}
+.page-top{display:grid;grid-template-columns:1fr 150px;gap:16px;align-items:end}
+.page-top h1{font-size:2.1rem}
+.pt-arte svg{width:100%;height:auto;display:block}
+@media (max-width:520px){.page-top{grid-template-columns:1fr 104px}.page-top h1{font-size:1.75rem}}
+@media (min-width:960px){.page-top{grid-template-columns:1fr 240px}.page-top h1{font-size:2.6rem}}
+.hero{grid-template-columns:1fr}
+.hero-arte{display:none}
+@media (min-width:960px){.hero{grid-template-columns:1.3fr 1fr;align-items:center}.hero-arte{display:block;grid-row:1/span 4;grid-column:2}.hero-arte .ilu{border-radius:12px}}
+.empty svg{width:150px;height:auto;stroke:none}
 </style>
 
 <div id="app"></div>
@@ -491,7 +504,7 @@ function officialsDemo(city){
     out.federal.push(fakePerson(c.pais+"chefe","Chefe de governo nacional","nacional"));
     return out;
   }
-  out.municipal.push(fakePerson(key+"pref","Prefeito(a) de "+c.nome,"municipal"));
+  out.municipal.push(fakePerson(key+"pref","Prefeito(a) "+de(c.nome),"municipal"));
   out.municipal.push(fakePerson(key+"vice","Vice-prefeito(a)","municipal"));
   for(let i=0;i<4;i++)out.municipal.push(fakePerson(key+"ver"+i,"Vereador(a)","municipal"));
   out.estadual.push(fakePerson(c.uf+"gov","Governador(a) — "+(UFS[c.uf]||c.uf),"estadual"));
@@ -531,6 +544,9 @@ const MODELOS = {
   lai:{n:"Pedido de informação (LAI)",assunto:(r,c)=>`Pedido de acesso à informação (Lei 12.527/2011): ${r.titulo}`},
   denuncia:{n:"Denúncia",assunto:(r,c)=>`Denúncia: ${r.titulo}`}
 };
+const CIDADES_COM_ARTIGO={"Rio de Janeiro":"o","Recife":"o","Crato":"o","Rio Grande":"o","Rio Branco":"o","Cabo de Santo Agostinho":"o","Guarujá":"o","Porto":"o"};
+function de(nome){const a=CIDADES_COM_ARTIGO[nome];return (a==="o"?"do ":a==="a"?"da ":"de ")+nome}
+function em(nome){const a=CIDADES_COM_ARTIGO[nome];return (a==="o"?"no ":a==="a"?"na ":"em ")+nome}
 function cidadeNome(c=S.cidade){if(!c)return"minha cidade";return c.pais&&c.pais!=="Brasil"?`${c.nome}, ${c.pais}`:`${c.nome} (${c.uf})`}
 function corpoEmail(r,modelo,ident){
   const cat=CAT[r.cat]||{org:"órgão responsável",n:"Outro"}; const p=S.perfil||{}; const L=[];
@@ -606,6 +622,73 @@ const ILU_CIDADE=`<svg class="ilu" viewBox="0 0 520 300" role="img" aria-label="
 <g><circle cx="60" cy="196" r="10" fill="var(--est)"/><rect x="50" y="206" width="20" height="16" rx="6" fill="var(--est)"/><circle cx="88" cy="194" r="10" fill="var(--fed)"/><rect x="78" y="204" width="20" height="18" rx="6" fill="var(--fed)"/></g>
 <g><rect x="46" y="128" width="104" height="44" rx="12" fill="var(--surface)" stroke="var(--line)"/><path d="M70 172l-8 14 18-14z" fill="var(--surface)"/><path d="M64 150l8 8 16-18" stroke="var(--ok)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="96" y="142" width="44" height="6" rx="3" fill="var(--line)"/><rect x="96" y="154" width="32" height="6" rx="3" fill="var(--line)"/></g>
 </svg>`;
+/* ---------- ARTE: ilustrações planas nas cores das esferas ---------- */
+// Ícones dos 20 tipos de problema (viewBox 64). A cor de fundo segue a esfera: verde município, azul estado, terracota União.
+const COR_ESF={municipal:"var(--mun)",estadual:"var(--est)",federal:"var(--fed)"};
+const ICO_CAT={
+ buraco:c=>`<rect x="6" y="34" width="52" height="20" rx="4" fill="var(--ink)" opacity=".85"/><rect x="10" y="42" width="10" height="3" rx="1.5" fill="var(--ipe)"/><rect x="44" y="42" width="10" height="3" rx="1.5" fill="var(--ipe)"/><ellipse cx="31" cy="44" rx="10" ry="4.5" fill="var(--paper)" opacity=".5"/><path d="M40 33l5-19 5 19z" fill="var(--ipe)"/><rect x="41.6" y="22" width="6.8" height="3" fill="var(--paper)"/><rect x="38" y="32" width="14" height="3" rx="1.5" fill="${c}"/>`,
+ iluminacao:c=>`<path d="M22 56V18q0-8 9-8h12" stroke="${c}" stroke-width="4.5" fill="none" stroke-linecap="round"/><path d="M38 10h12l-3 6h-6z" fill="${c}"/><path d="M41 16l-9 30h28l-9-30z" fill="var(--ipe)" opacity=".35"/><circle cx="44" cy="17" r="3.5" fill="var(--ipe)"/><rect x="15" y="54" width="14" height="4" rx="2" fill="${c}"/>`,
+ lixo:c=>`<rect x="18" y="22" width="26" height="32" rx="3" fill="${c}"/><rect x="15" y="17" width="32" height="6" rx="2" fill="${c}"/><rect x="27" y="12" width="8" height="5" rx="1.5" fill="${c}"/><g stroke="var(--paper)" stroke-width="2.5" stroke-linecap="round" opacity=".7"><path d="M25 29v18M31 29v18M37 29v18"/></g><path d="M44 46c4-6 12-4 12 2s-6 8-12 6z" fill="var(--ink)" opacity=".75"/><path d="M48 44l2-4 2 4" stroke="var(--ink)" stroke-width="2" fill="none" opacity=".75"/>`,
+ transporte:c=>`<rect x="14" y="12" width="36" height="40" rx="7" fill="${c}"/><rect x="18" y="17" width="28" height="15" rx="2.5" fill="var(--paper)" opacity=".85"/><rect x="20" y="13.5" width="24" height="2.5" rx="1" fill="var(--ipe)"/><circle cx="22" cy="41" r="3" fill="var(--ipe)"/><circle cx="42" cy="41" r="3" fill="var(--ipe)"/><rect x="17" y="52" width="7" height="5" rx="2" fill="var(--ink)"/><rect x="40" y="52" width="7" height="5" rx="2" fill="var(--ink)"/>`,
+ ubs:c=>`<rect x="12" y="24" width="40" height="30" rx="3" fill="${c}"/><path d="M9 26l23-14 23 14z" fill="${c}"/><rect x="26" y="40" width="12" height="14" rx="1.5" fill="var(--paper)" opacity=".85"/><rect x="28.5" y="27" width="7" height="12" rx="1" fill="var(--paper)"/><rect x="26" y="29.5" width="12" height="7" rx="1" fill="var(--paper)"/><circle cx="51" cy="14" r="5" fill="var(--ipe)"/>`,
+ hospital:c=>`<rect x="10" y="18" width="44" height="36" rx="3" fill="${c}"/><g fill="var(--paper)" opacity=".85"><rect x="15" y="24" width="7" height="6" rx="1"/><rect x="42" y="24" width="7" height="6" rx="1"/><rect x="15" y="35" width="7" height="6" rx="1"/><rect x="42" y="35" width="7" height="6" rx="1"/></g><rect x="25" y="22" width="14" height="14" rx="2.5" fill="var(--paper)"/><path d="M29 25v8M35 25v8M29 29h6" stroke="${c}" stroke-width="2.8" stroke-linecap="round"/><rect x="27" y="42" width="10" height="12" rx="1.5" fill="var(--ipe)"/>`,
+ escola_mun:c=>`<rect x="12" y="28" width="40" height="26" rx="3" fill="${c}"/><path d="M9 30l23-14 23 14z" fill="${c}"/><rect x="31" y="6" width="2" height="12" fill="var(--ink)"/><path d="M33 6h10l-3 3 3 3H33z" fill="var(--ipe)"/><circle cx="32" cy="27" r="4" fill="var(--paper)"/><rect x="27" y="40" width="10" height="14" rx="1.5" fill="var(--paper)" opacity=".85"/><g fill="var(--paper)" opacity=".7"><rect x="16" y="36" width="7" height="6" rx="1"/><rect x="41" y="36" width="7" height="6" rx="1"/></g>`,
+ escola_est:c=>`<rect x="12" y="40" width="40" height="9" rx="2" fill="${c}"/><rect x="15" y="31" width="34" height="9" rx="2" fill="var(--ipe)"/><rect x="11" y="22" width="38" height="9" rx="2" fill="${c}" opacity=".7"/><path d="M20 14l14-6 14 6-14 6z" fill="var(--ink)"/><path d="M44 16v7" stroke="var(--ink)" stroke-width="2"/><rect x="12" y="49" width="40" height="5" rx="1.5" fill="var(--ink)" opacity=".2"/>`,
+ seguranca:c=>`<path d="M32 8l20 7v13c0 13-9 22-20 27-11-5-20-14-20-27V15z" fill="${c}"/><path d="M32 17l3.5 7 7.5 1-5.5 5.5 1.3 7.5L32 34.5 25.2 38l1.3-7.5L21 25l7.5-1z" fill="var(--ipe)"/>`,
+ saneamento:c=>`<rect x="8" y="16" width="26" height="8" rx="3" fill="${c}"/><rect x="28" y="13" width="10" height="14" rx="3" fill="${c}"/><rect x="31" y="8" width="4" height="6" rx="1.5" fill="var(--ink)"/><rect x="26" y="5" width="14" height="4" rx="2" fill="var(--ink)"/><path d="M38 20h6a5 5 0 015 5v4" stroke="${c}" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M49 36c4 6 5 9 5 12a5 5 0 01-10 0c0-3 1-6 5-12z" fill="var(--est)" opacity=".75"/><path d="M14 44c3 5 4 7 4 9a4 4 0 01-8 0c0-2 1-4 4-9z" fill="var(--est)" opacity=".45"/>`,
+ drenagem:c=>`<rect x="18" y="20" width="28" height="24" rx="2" fill="${c}"/><path d="M14 22l18-12 18 12z" fill="${c}"/><rect x="28" y="30" width="8" height="14" fill="var(--paper)" opacity=".8"/><path d="M4 44q7-5 14 0t14 0 14 0 14 0v14H4z" fill="var(--est)" opacity=".55"/><path d="M4 50q7-5 14 0t14 0 14 0 14 0" stroke="var(--paper)" stroke-width="2" fill="none" opacity=".6"/><path d="M46 8l-4 8h5l-3 8" stroke="var(--ipe)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>`,
+ verde:c=>`<circle cx="32" cy="24" r="16" fill="${c}"/><circle cx="21" cy="30" r="9" fill="${c}"/><circle cx="43" cy="30" r="9" fill="${c}"/><rect x="29" y="34" width="6" height="18" rx="2" fill="var(--ink)" opacity=".7"/><rect x="12" y="52" width="40" height="4" rx="2" fill="var(--ink)" opacity=".25"/><circle cx="25" cy="20" r="2.5" fill="var(--ipe)"/><circle cx="38" cy="15" r="2.5" fill="var(--ipe)"/>`,
+ poluicao:c=>`<path d="M10 26h9l12-10v32L19 38h-9z" fill="${c}"/><path d="M38 22q6 10 0 20M45 16q11 16 0 32" stroke="var(--ipe)" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+ animais:c=>`<path d="M16 22l-4-12 12 7M48 22l4-12-12 7" fill="${c}"/><ellipse cx="32" cy="34" rx="18" ry="17" fill="${c}"/><ellipse cx="32" cy="42" rx="9" ry="7" fill="var(--paper)" opacity=".85"/><circle cx="25" cy="31" r="2.5" fill="var(--ink)"/><circle cx="39" cy="31" r="2.5" fill="var(--ink)"/><ellipse cx="32" cy="39" rx="3" ry="2.2" fill="var(--ink)"/><path d="M32 41v3" stroke="var(--ink)" stroke-width="1.6"/>`,
+ rodovia:c=>`<path d="M14 58L26 6h12l12 52z" fill="var(--ink)" opacity=".8"/><path d="M32 12v8M32 28v8M32 44v8" stroke="var(--ipe)" stroke-width="2.5"/><path d="M40 10h16v10c0 6-4 10-8 12-4-2-8-6-8-12z" fill="${c}"/><text x="48" y="22" text-anchor="middle" font-family="Archivo, Arial, sans-serif" font-weight="800" font-size="8" fill="var(--paper)">BR</text>`,
+ inss:c=>`<rect x="14" y="10" width="36" height="44" rx="4" fill="${c}"/><rect x="20" y="18" width="24" height="3" rx="1.5" fill="var(--paper)" opacity=".8"/><rect x="20" y="25" width="18" height="3" rx="1.5" fill="var(--paper)" opacity=".8"/><rect x="20" y="32" width="21" height="3" rx="1.5" fill="var(--paper)" opacity=".8"/><circle cx="40" cy="46" r="8" fill="var(--ipe)"/><path d="M36.5 46l2.5 2.5 5-5" stroke="var(--ink)" stroke-width="2.2" fill="none" stroke-linecap="round"/>`,
+ energia:c=>`<rect x="29" y="8" width="6" height="48" rx="2" fill="${c}"/><rect x="14" y="14" width="36" height="5" rx="2" fill="${c}"/><rect x="18" y="26" width="28" height="4" rx="2" fill="${c}"/><circle cx="16" cy="14" r="2.5" fill="var(--ink)"/><circle cx="48" cy="14" r="2.5" fill="var(--ink)"/><path d="M44 36l-8 12h6l-4 10 10-13h-6l4-9z" fill="var(--ipe)"/>`,
+ telecom:c=>`<path d="M32 22L22 58h4l6-24 6 24h4z" fill="${c}"/><path d="M26 44h12" stroke="${c}" stroke-width="3"/><circle cx="32" cy="18" r="4" fill="var(--ipe)"/><path d="M23 10q-5 8 0 16M41 10q5 8 0 16M17 5q-9 13 0 26M47 5q9 13 0 26" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+ ambiente:c=>`<path d="M14 50C14 26 30 12 52 10c0 24-14 40-38 40z" fill="${c}"/><path d="M16 48C26 36 34 28 44 20" stroke="var(--paper)" stroke-width="2.5" fill="none" opacity=".7"/><rect x="8" y="48" width="12" height="8" rx="2" fill="var(--ink)" opacity=".7"/><circle cx="47" cy="44" r="7" fill="var(--danger)" opacity=".85"/><path d="M44 41l6 6M50 41l-6 6" stroke="var(--paper)" stroke-width="2.2" stroke-linecap="round"/>`,
+ consumidor:c=>`<path d="M14 22h36l-3 32H17z" fill="${c}"/><path d="M24 22v-4a8 8 0 0116 0v4" stroke="var(--ink)" stroke-width="3" fill="none"/><rect x="34" y="30" width="18" height="24" rx="2" fill="var(--paper)"/><path d="M38 36h10M38 41h10M38 46h6" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/><path d="M34 54l3-2 3 2 3-2 3 2 3-2 3 2" stroke="var(--paper)" stroke-width="2" fill="none"/>`
+};
+function icoCat(k,size=44){const c=CAT[k];if(!c||!ICO_CAT[k])return "";const cor=COR_ESF[c.e]||"var(--accent)";
+  return `<svg class="cat-ico" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="var(--sunk)"/>${ICO_CAT[k](cor)}</svg>`}
+
+// Faixa de calçada portuguesa (ondas em preto e branco), usada nos topos de página.
+function calcada(id,altura=22){return `<svg class="calcada" height="${altura}" width="100%" preserveAspectRatio="none" aria-hidden="true"><defs><pattern id="cp${id}" width="48" height="${altura}" patternUnits="userSpaceOnUse"><rect width="48" height="${altura}" fill="var(--paper)"/><path d="M0 ${altura*0.5} Q12 ${altura*0.05} 24 ${altura*0.5} T48 ${altura*0.5} V${altura} H0z" fill="var(--ink)"/></pattern></defs><rect width="100%" height="${altura}" fill="url(#cp${id})"/></svg>`}
+
+// Ilustrações de topo das abas (viewBox 220x150).
+const ART_TOPO={
+ politica:`<svg viewBox="0 0 220 150" aria-hidden="true"><rect x="0" y="118" width="220" height="32" rx="8" fill="var(--sunk)"/>
+  <g><rect x="10" y="70" width="58" height="48" rx="3" fill="var(--mun)"/><path d="M6 72l33-20 33 20z" fill="var(--mun)"/><g fill="var(--paper)" opacity=".85"><rect x="18" y="80" width="8" height="30"/><rect x="35" y="80" width="8" height="30"/><rect x="52" y="80" width="8" height="30"/></g></g>
+  <g><rect x="80" y="54" width="60" height="64" rx="3" fill="var(--est)"/><rect x="76" y="48" width="68" height="8" rx="2" fill="var(--est)"/><rect x="106" y="30" width="8" height="18" fill="var(--est)"/><path d="M114 30h18l-5 5 5 5h-18z" fill="var(--ipe)"/><g fill="var(--paper)" opacity=".85"><rect x="88" y="64" width="10" height="12" rx="1"/><rect x="105" y="64" width="10" height="12" rx="1"/><rect x="122" y="64" width="10" height="12" rx="1"/><rect x="102" y="92" width="16" height="26" rx="2"/></g></g>
+  <g><rect x="150" y="92" width="64" height="26" rx="3" fill="var(--fed)"/><rect x="176" y="38" width="5" height="54" fill="var(--fed)"/><rect x="183" y="38" width="5" height="54" fill="var(--fed)"/><path d="M152 92a12 12 0 0124 0z" fill="var(--fed)" opacity=".75"/><path d="M190 80h24a12 12 0 01-24 0z" fill="var(--fed)" opacity=".75"/><rect x="200" y="80" width="4" height="12" fill="var(--fed)" opacity=".75"/><g fill="var(--paper)" opacity=".85"><rect x="156" y="100" width="52" height="3" rx="1.5"/><rect x="156" y="108" width="52" height="3" rx="1.5"/></g></g>
+  <g font-family="Archivo, Arial, sans-serif" font-weight="800" font-size="13" text-anchor="middle" fill="var(--muted)"><text x="39" y="138">M</text><text x="110" y="138">E</text><text x="182" y="138">F</text></g></svg>`,
+ propostas:`<svg viewBox="0 0 220 150" aria-hidden="true"><rect x="0" y="118" width="220" height="32" rx="8" fill="var(--sunk)"/>
+  <rect x="66" y="14" width="88" height="110" rx="6" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><rect x="78" y="28" width="52" height="6" rx="3" fill="var(--ink)"/><g fill="var(--line)"><rect x="78" y="44" width="64" height="4" rx="2"/><rect x="78" y="54" width="58" height="4" rx="2"/><rect x="78" y="64" width="62" height="4" rx="2"/><rect x="78" y="74" width="40" height="4" rx="2"/></g><circle cx="132" cy="102" r="14" fill="var(--ipe)"/><path d="M125 102l5 5 9-10" stroke="var(--ipe-ink)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <g><rect x="18" y="66" width="12" height="34" rx="6" fill="var(--mun)"/><circle cx="24" cy="60" r="7" fill="var(--mun)"/><rect x="36" y="80" width="18" height="40" rx="9" fill="var(--est)"/><circle cx="45" cy="72" r="8" fill="var(--est)"/><rect x="48" y="58" width="6" height="22" rx="3" fill="var(--est)"/></g>
+  <g><rect x="168" y="80" width="18" height="40" rx="9" fill="var(--fed)"/><circle cx="177" cy="72" r="8" fill="var(--fed)"/><rect x="168" y="56" width="6" height="24" rx="3" fill="var(--fed)"/><rect x="192" y="72" width="14" height="48" rx="7" fill="var(--mun)"/><circle cx="199" cy="64" r="7" fill="var(--mun)"/></g></svg>`,
+ aprender:`<svg viewBox="0 0 220 150" aria-hidden="true"><rect x="0" y="118" width="220" height="32" rx="8" fill="var(--sunk)"/>
+  <path d="M110 46C90 34 60 32 36 38v76c24-6 54-4 74 8 20-12 50-14 74-8V38c-24-6-54-4-74 8z" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><path d="M110 46v76" stroke="var(--line)" stroke-width="2"/>
+  <g fill="var(--line)"><rect x="50" y="56" width="46" height="4" rx="2"/><rect x="50" y="66" width="40" height="4" rx="2"/><rect x="50" y="76" width="44" height="4" rx="2"/><rect x="124" y="56" width="46" height="4" rx="2"/><rect x="124" y="66" width="38" height="4" rx="2"/></g>
+  <g transform="translate(124 74)"><rect width="16" height="22" rx="2" fill="var(--mun)"/><rect x="18" y="8" width="16" height="14" rx="2" fill="var(--est)"/><rect x="36" y="2" width="12" height="20" rx="2" fill="var(--fed)"/></g>
+  <path d="M110 6l34 14-34 14-34-14z" fill="var(--ink)"/><path d="M136 22v14" stroke="var(--ink)" stroke-width="3"/><circle cx="136" cy="38" r="4" fill="var(--ipe)"/><path d="M90 26v10c0 5 9 8 20 8s20-3 20-8V26" fill="var(--ink)" opacity=".85"/></svg>`,
+ relatar:`<svg viewBox="0 0 220 150" aria-hidden="true"><rect x="0" y="118" width="220" height="32" rx="8" fill="var(--sunk)"/>
+  <rect x="74" y="8" width="72" height="128" rx="12" fill="var(--ink)"/><rect x="80" y="20" width="60" height="98" rx="4" fill="var(--paper)"/><rect x="80" y="74" width="60" height="44" fill="var(--ink)" opacity=".8"/><ellipse cx="104" cy="96" rx="14" ry="5" fill="var(--paper)" opacity=".4"/><path d="M120 98l5-18 5 18z" fill="var(--ipe)"/>
+  <g fill="var(--line)"><rect x="84" y="28" width="30" height="16" rx="2"/><rect x="118" y="32" width="18" height="12" rx="2"/></g><circle cx="110" cy="128" r="3" fill="var(--paper)" opacity=".6"/>
+  <path d="M110 46c-8 0-14 6-14 14 0 10 14 22 14 22s14-12 14-22c0-8-6-14-14-14z" fill="var(--danger)"/><circle cx="110" cy="60" r="5" fill="var(--paper)"/>
+  <g><rect x="156" y="40" width="54" height="34" rx="8" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><path d="M164 74l-6 10 14-10z" fill="var(--surface)"/><rect x="164" y="50" width="38" height="4" rx="2" fill="var(--mun)"/><rect x="164" y="60" width="26" height="4" rx="2" fill="var(--line)"/></g>
+  <g><circle cx="38" cy="58" r="22" fill="var(--sunk)" stroke="var(--line)" stroke-width="2"/><path d="M28 58l7 7 14-15" stroke="var(--ok)" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`,
+ perfil:`<svg viewBox="0 0 220 150" aria-hidden="true"><rect x="0" y="118" width="220" height="32" rx="8" fill="var(--sunk)"/>
+  <rect x="30" y="22" width="110" height="74" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><circle cx="62" cy="54" r="16" fill="var(--accent)"/><path d="M42 86c4-12 12-16 20-16s16 4 20 16z" fill="var(--accent)"/><g fill="var(--line)"><rect x="92" y="40" width="38" height="5" rx="2.5"/><rect x="92" y="52" width="30" height="5" rx="2.5"/><rect x="92" y="64" width="34" height="5" rx="2.5"/></g>
+  <g transform="translate(150 40)"><path d="M10 0h20l-4 26H14z" fill="var(--est)"/><path d="M30 0h20l-4 26H34z" fill="var(--fed)"/><circle cx="30" cy="48" r="24" fill="var(--ipe)"/><circle cx="30" cy="48" r="16" fill="none" stroke="var(--ipe-ink)" stroke-width="2.5" opacity=".5"/><path d="M30 37l3.5 7 7.5 1-5.5 5 1.3 7.5L30 54l-6.8 3.5 1.3-7.5-5.5-5 7.5-1z" fill="var(--ipe-ink)"/></g></svg>`
+};
+function topo(chave,eyebrow,titulo,lead){
+  return `<header class="page-top"><div class="pt-texto stack" style="gap:8px">${eyebrow?`<span class="eyebrow">${eyebrow}</span>`:""}<h1>${titulo}</h1>${lead?`<p class="muted">${lead}</p>`:""}</div><div class="pt-arte">${ART_TOPO[chave]||""}</div></header>${calcada(chave)}`;
+}
+// Ilustrações de telas vazias (viewBox 160x110).
+const ART_VAZIO={
+ mural:`<svg viewBox="0 0 160 110" width="150" aria-hidden="true"><rect x="10" y="86" width="140" height="16" rx="6" fill="var(--sunk)"/><rect x="34" y="20" width="92" height="58" rx="6" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><rect x="44" y="32" width="32" height="22" rx="3" fill="var(--sunk)"/><path d="M48 50l7-8 6 6 5-4 6 6" stroke="var(--mun)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><g fill="var(--line)"><rect x="82" y="34" width="34" height="4" rx="2"/><rect x="82" y="44" width="26" height="4" rx="2"/><rect x="44" y="62" width="60" height="4" rx="2"/></g><rect x="76" y="78" width="8" height="10" fill="var(--line)"/><circle cx="126" cy="22" r="11" fill="var(--ipe)"/><path d="M126 16v12M120 22h12" stroke="var(--ipe-ink)" stroke-width="3" stroke-linecap="round"/></svg>`,
+ cobrancas:`<svg viewBox="0 0 160 110" width="150" aria-hidden="true"><rect x="10" y="88" width="140" height="14" rx="6" fill="var(--sunk)"/><rect x="74" y="56" width="8" height="34" fill="var(--muted)"/><path d="M50 30h40a14 14 0 0114 14v16H36V44a14 14 0 0114-14z" fill="var(--accent)"/><rect x="48" y="40" width="30" height="4" rx="2" fill="var(--accent-ink)" opacity=".7"/><path d="M104 36v-16h16v8h-10" fill="var(--ipe)"/><path d="M104 20v24" stroke="var(--ink)" stroke-width="2.5"/></svg>`,
+ propostas:`<svg viewBox="0 0 160 110" width="150" aria-hidden="true"><rect x="10" y="88" width="140" height="14" rx="6" fill="var(--sunk)"/><rect x="48" y="14" width="64" height="74" rx="5" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><g fill="var(--line)"><rect x="58" y="26" width="36" height="5" rx="2.5"/><rect x="58" y="38" width="44" height="4" rx="2"/><rect x="58" y="47" width="40" height="4" rx="2"/></g><path d="M100 70l14-34 8 4-14 34-9 5z" fill="var(--ipe)"/><path d="M100 70l-1 9 9-5" fill="var(--ink)"/></svg>`
+};
+
 /* ---------- CONFIRMAÇÃO DE E-MAIL ---------- */
 const confirmacaoAtiva=()=>!!(Dados.config&&Dados.config.confirmacaoUrl&&Nostr.ready);
 async function chamarConfirmacao(rota,corpo){
@@ -684,6 +767,7 @@ function viewLanding(){
       <h1>Cobre quem é responsável pelo que está errado na sua cidade.</h1>
       <p class="lead">O Cidadania mostra qual órgão resolve cada problema, prepara a reclamação com o prazo legal de resposta e acompanha até ser resolvido. Gratuito, sem anúncios, para os 5.570 municípios do Brasil.</p>
       ${ILU_CIDADE}
+      ${calcada("ln",18)}
     </div><div class="ln-form">
     <section class="card stack relate" id="relateCard">
       <h2>Relate agora</h2>
@@ -703,7 +787,7 @@ function viewLanding(){
       <p class="muted" style="font-size:.84rem">Nada é enviado ainda. No próximo passo você vê o órgão responsável e a mensagem pronta, e decide como enviar.</p>
     </section></div></div>
     <section class="stack"><h2>O que você pode relatar</h2>
-      <div class="cat-grid">${CATS_VITRINE.map(k=>{const c=CAT[k];return `<button data-lcat="${k}"><span class="esf ${c.e}" data-l="${ESF[c.e].l}">${ESF[c.e].n}</span>${esc(c.n)}<span class="muted" style="font-weight:400;font-size:.78rem">${esc(c.org)}</span></button>`}).join("")}</div>
+      <div class="cat-grid">${CATS_VITRINE.map(k=>{const c=CAT[k];return `<button data-lcat="${k}">${icoCat(k,40)}<span class="esf ${c.e}" data-l="${ESF[c.e].l}">${ESF[c.e].n}</span>${esc(c.n)}<span class="muted" style="font-weight:400;font-size:.78rem">${esc(c.org)}</span></button>`}).join("")}</div>
       <p class="muted" style="font-size:.86rem">Toque num tipo para começar o relato com ele.</p>
       <p class="muted" style="font-size:.86rem">E mais ${CATS.length-CATS_VITRINE.length} tipos, de INSS a desmatamento. Para cada um, o app explica por que o problema é da prefeitura, do estado ou da União.</p>
     </section>
@@ -875,7 +959,7 @@ function statusOf(r){
 }
 function recItem(r){
   const st=statusOf(r); const cat=CAT[r.cat];
-  return `<button class="item-btn" data-rec="${esc(r.id)}">${r.midia?.[0]?.tipo==="foto"?`<img src="${esc(r.midia[0].url)}" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:6px;flex:none">`:""}<span class="grow stack" style="gap:4px"><b>${esc(r.titulo)}</b><span class="row" style="gap:6px">${cat?`<span class="esf ${cat.e}" data-l="${ESF[cat.e].l}">${ESF[cat.e].n}</span>`:""}<span class="pill s-${st.k}"><i></i>${st.n}</span></span><span class="muted mono">${protocolo(r)} · ${fmtDate(r.criado)}</span></span></button>`;
+  return `<button class="item-btn" data-rec="${esc(r.id)}">${r.midia?.[0]?.tipo==="foto"?`<img src="${esc(r.midia[0].url)}" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:6px;flex:none">`:icoCat(r.cat,52)}<span class="grow stack" style="gap:4px"><b>${esc(r.titulo)}</b><span class="row" style="gap:6px">${cat?`<span class="esf ${cat.e}" data-l="${ESF[cat.e].l}">${ESF[cat.e].n}</span>`:""}<span class="pill s-${st.k}"><i></i>${st.n}</span></span><span class="muted mono">${protocolo(r)} · ${fmtDate(r.criado)}</span></span></button>`;
 }
 /* ---------- MURAL (cidade, bairro, rua) ---------- */
 let muralF={nivel:"cidade",bairro:"",rua:"",status:"abertos"};
@@ -904,12 +988,12 @@ function viewInicio(){
   const onde=muralF.nivel==="cidade"?city.nome:muralF.nivel==="bairro"?(muralF.bairro||"escolha o bairro"):(muralF.rua?`${muralF.rua}, ${muralF.bairro}`:"escolha a rua");
   return `
   ${installCard()}
-  <section class="hero"><span class="stripe" aria-hidden="true"></span>
-    <span class="eyebrow" style="color:inherit;opacity:.85">Mural de ${esc(city.nome)}</span>
-    <h1>${abertos.length?`${abertos.length} ${abertos.length>1?"problemas abertos":"problema aberto"} ${muralF.nivel==="cidade"?"na cidade":muralF.nivel==="bairro"?"no bairro":"na rua"}`:`O que está errado em ${esc(city.nome)}?`}</h1>
+  <section class="hero"><div class="hero-arte" aria-hidden="true">${ILU_CIDADE}</div>
+    <span class="eyebrow" style="color:inherit;opacity:.85">Mural ${esc(de(city.nome))}</span>
+    <h1>${abertos.length?`${abertos.length} ${abertos.length>1?"problemas abertos":"problema aberto"} ${muralF.nivel==="cidade"?"na cidade":muralF.nivel==="bairro"?"no bairro":"na rua"}`:`O que está errado ${esc(em(city.nome))}?`}</h1>
     <p>Tudo o que os moradores tornam público aparece aqui. Apoie quem tem o mesmo problema: quanto mais apoios, mais pressão.</p>
     <a class="btn" href="#relatar">Relatar um problema</a>
-  </section>
+  </section>${calcada("mural",18)}
   ${pend?`<div class="notice"><b>${pend} ${pend>1?"cobranças suas":"cobrança sua"} sem resposta</b><span>O prazo legal acabou. Você pode escalar para vereadores, Ministério Público ou Tribunal de Contas. <a href="#perfil">Ver no perfil</a></span></div>`:""}
   <section class="stack">
     <div class="seg" role="group" aria-label="Recorte do mural">${[["cidade","Cidade inteira"],["bairro","Bairro"],["rua","Rua"]].map(([k,n])=>`<button data-mn="${k}" aria-pressed="${muralF.nivel===k}">${n}</button>`).join("")}</div>
@@ -918,12 +1002,12 @@ function viewInicio(){
     ${muralF.nivel==="cidade"&&top.length?`<div class="stack" style="gap:6px"><span class="eyebrow">Bairros com mais problemas abertos</span><div class="chips">${top.map(t=>`<button class="chip" data-gob="${esc(t.n)}">${esc(t.n)} <b>${t.c}</b></button>`).join("")}</div></div>`:""}
     <div class="section-head"><h2>${esc(onde)}</h2><div class="chips">${[["abertos","Abertos"],["resolvidos","Resolvidos"],["todos","Todos"]].map(([k,n])=>`<button class="chip" data-ms="${k}" aria-pressed="${muralF.status===k}">${n}</button>`).join("")}</div></div>
     ${redeStatus()}
-    ${list.length?`<div class="list">${list.map(muralItem).join("")}</div>`:`<div class="card flat empty"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H4z"/><path d="M8 21h8M12 17v4"/></svg><p><b>${todos.length?"Nada com esse recorte.":"O mural de "+esc(city.nome)+" está vazio."}</b></p><p class="muted">Ao relatar, deixe marcado “Mostrar no mural” e informe o bairro e a rua. O mural nunca mostra seu nome, CPF ou contato.</p><a class="btn primary" href="#relatar">Fazer o primeiro relato</a></div>`}
+    ${list.length?`<div class="list">${list.map(muralItem).join("")}</div>`:`<div class="card flat empty">${ART_VAZIO.mural}<p><b>${todos.length?"Nada com esse recorte.":"O mural "+esc(de(city.nome))+" está vazio."}</b></p><p class="muted">Ao relatar, deixe marcado “Mostrar no mural” e informe o bairro e a rua. O mural nunca mostra seu nome, CPF ou contato.</p><a class="btn primary" href="#relatar">Fazer o primeiro relato</a></div>`}
   </section>
   ${(()=>{const a=[...audLocal(city,"mun"),...audLocal(city,"est")].sort((x,y)=>x.c.valor.data.localeCompare(y.c.valor.data))[0];return a?`<button class="install" id="homeAud" style="cursor:pointer;text-align:left;width:100%;color:var(--ink)"><span class="grow"><span class="eyebrow">Próxima audiência pública</span><br><b>${esc(a.c.valor.tema)}</b><br><span class="muted">${esc(fmtDiaHora(a.c.valor.data+(a.c.valor.hora?"T"+a.c.valor.hora:"")))}${a.c.valor.local?" · "+esc(a.c.valor.local):""}</span></span></button>`:""})()}
   <section class="stack"><div class="section-head"><h2>Atalhos</h2></div>
     <div class="quick">
-      ${[["buraco","Buraco na rua",'<path d="M3 17h18"/><ellipse cx="12" cy="14" rx="6" ry="2.5"/>'],["iluminacao","Poste apagado",'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 014 10.5V16H8v-2.5A6 6 0 0112 3z"/>'],["lixo","Lixo acumulado",'<path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13M9 7V4h6v3"/>'],["drenagem","Alagamento",'<path d="M12 3s6 7 6 11a6 6 0 01-12 0c0-4 6-11 6-11z"/>']].map(([k,n,ic])=>`<button data-quick="${k}"><span class="ico"><svg viewBox="0 0 24 24">${ic}</svg></span>${n}</button>`).join("")}
+      ${[["buraco","Buraco na rua",'<path d="M3 17h18"/><ellipse cx="12" cy="14" rx="6" ry="2.5"/>'],["iluminacao","Poste apagado",'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 014 10.5V16H8v-2.5A6 6 0 0112 3z"/>'],["lixo","Lixo acumulado",'<path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13M9 7V4h6v3"/>'],["drenagem","Alagamento",'<path d="M12 3s6 7 6 11a6 6 0 01-12 0c0-4 6-11 6-11z"/>']].map(([k,n,ic])=>`<button data-quick="${k}">${icoCat(k,44)}${n}</button>`).join("")}
     </div></section>
   <section class="card stack"><span class="eyebrow">Você sabia?</span><h3>${esc(dica().t)}</h3><p>${esc(dica().d)}</p><a href="#aprender">Abrir a Escola Cívica</a></section>`;
 }
@@ -931,7 +1015,7 @@ function muralItem(m){
   const cat=CAT[m.cat]; const n=contaApoio(m.id); const on=apoiei(m.id); const res=m.status==="resolvido";
   const onde=[m.rua,m.bairro].filter(Boolean).join(" · ");
   return `<div class="prop"><button class="support" data-apoio="${esc(m.id)}" aria-pressed="${on}" ${res?"disabled":""} aria-label="${on?"Retirar apoio":"Apoiar: também tenho esse problema"}"><b>${n}</b><small>${on?"Apoiado":"Apoiar"}</small></button>
-  <div class="stack" style="gap:6px;min-width:0"><span class="row" style="gap:6px">${res?'<span class="pill s-resolvida"><i></i>Resolvido</span>':""}${onde?`<span class="where">${esc(onde)}</span>`:""}</span><b>${esc(m.titulo)}</b>${m.foto?`<img src="${esc(m.foto)}" alt="" loading="lazy" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px">`:""}<p class="muted" style="font-size:.9rem">${esc(m.resumo)}</p>
+  <div class="stack" style="gap:6px;min-width:0"><span class="row" style="gap:6px">${res?'<span class="pill s-resolvida"><i></i>Resolvido</span>':""}${onde?`<span class="where">${esc(onde)}</span>`:""}</span><span class="row" style="flex-wrap:nowrap;gap:10px;align-items:center">${m.foto?"":icoCat(m.cat,40)}<b>${esc(m.titulo)}</b></span>${m.foto?`<img src="${esc(m.foto)}" alt="" loading="lazy" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px">`:""}<p class="muted" style="font-size:.9rem">${esc(m.resumo)}</p>
   <span class="row" style="gap:6px">${cat?`<span class="esf ${cat.e}" data-l="${ESF[cat.e].l}">${ESF[cat.e].n}</span><span class="muted" style="font-size:.82rem">${esc(cat.org)}</span>`:""}<span class="muted mono" style="font-size:.76rem">${fmtDate(m.criado)}</span></span>
   ${res||m._autor===S.uid?"":`<button class="btn small" data-junto="${esc(m.id)}" style="align-self:flex-start">Cobrar também</button>`}</div></div>`;
 }
@@ -1011,7 +1095,7 @@ function novoDraft(){return {id:"r_"+Date.now().toString(36)+uidLocal(),passo:1,
 function viewRelatar(){
   if(!S.draft)S.draft=novoDraft(); const d=S.draft;
   const head=`<div class="stack"><span class="eyebrow">Relatar problema · passo ${d.passo} de 4</span><div class="stepper">${[1,2,3,4].map(i=>`<span class="${i<=d.passo?"on":""}"></span>`).join("")}</div></div>`;
-  if(d.passo===1)return head+`<h1>Mostre o problema</h1>
+  if(d.passo===1)return topo("relatar","","Mostre o problema","")+head+`
     <p class="muted">Fotos e vídeos dão força à cobrança. Mostre o problema e algo que identifique o lugar, como uma placa ou fachada.</p>
     <label class="drop" for="mFile"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/></svg><b>Tirar foto, gravar vídeo ou escolher arquivo</b><span class="muted" style="font-size:.85rem">No celular, abre a câmera. Fotos são reduzidas para envio rápido.</span></label>
     <input type="file" id="mFile" accept="image/*,video/*" multiple hidden>
@@ -1034,13 +1118,13 @@ function viewRelatar(){
     const cat=CAT[d.cat];
     return head+`<h1>Quem resolve?</h1>
     ${cat?`<div class="card stack"><div class="row"><span class="esf ${cat.e}" data-l="${ESF[cat.e].l}">${ESF[cat.e].n}</span>${d.catAuto?'<span class="pill">Sugestão automática</span>':""}</div>
-      <h2>${esc(cat.org)}</h2><p class="muted">${esc(cat.n)}</p>
+      <div class="row" style="flex-wrap:nowrap;align-items:center;gap:12px">${icoCat(cat.k,56)}<div class="grow"><h2>${esc(cat.org)}</h2><p class="muted">${esc(cat.n)}</p></div></div>
       <div class="why"><b>Por que é com ${cat.e==="municipal"?"a prefeitura":cat.e==="estadual"?"o estado":"a União"}?</b> ${esc(cat.why)}</div>
       <h3 style="margin-top:6px">Quem pode agir</h3><div class="list">${responsaveis(cat,S.cidade).map(x=>personRow(x.p,x.papel)).join("")}</div>
       <p class="muted" style="font-size:.82rem">${Dados.disp?"Eleitos: TSE, Câmara e Senado. Secretários: informados e conferidos por moradores.":'<span class="pill demo">Demonstração</span> Nomes e partidos são fictícios neste modo.'}</p>
     </div>`:`<div class="card flat"><p>Não deu para identificar o tipo automaticamente. Escolha abaixo.</p></div>`}
     ${S.sample?`<button class="btn" id="aiCat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>Pedir ao Claude para analisar o relato</button><p class="muted" id="aiMsg" role="status" style="font-size:.86rem"></p>`:""}
-    <details class="acc" ${cat?"":"open"}><summary>Escolher outro tipo de problema</summary><div class="body"><div class="cat-grid">${CATS.map(c=>`<button data-cat="${c.k}" aria-pressed="${c.k===d.cat}"><span class="esf ${c.e}" data-l="${ESF[c.e].l}">${ESF[c.e].n}</span>${esc(c.n)}</button>`).join("")}</div></div></details>
+    <details class="acc" ${cat?"":"open"}><summary>Escolher outro tipo de problema</summary><div class="body"><div class="cat-grid">${CATS.map(c=>`<button data-cat="${c.k}" aria-pressed="${c.k===d.cat}">${icoCat(c.k,36)}<span class="esf ${c.e}" data-l="${ESF[c.e].l}">${ESF[c.e].n}</span>${esc(c.n)}</button>`).join("")}</div></div></details>
     <div class="row"><button class="btn" id="bk">Voltar</button><button class="btn primary grow" id="nx" ${cat?"":"disabled"}>Preparar cobrança</button></div>`;
   }
   const cat=CAT[d.cat]; const ch=CHANNEL[cat.e]; const ve=valorDe(alvoEmail(cat)); const sug=ve.ver?ve.ver.c.valor:"";
@@ -1187,7 +1271,7 @@ function viewPoliticaDemo(){
   const groups={}; for(const p of lst){const g=/Vereador|Deputad|Senador|conselho/.test(p.cargo)?"Legislativo":"Executivo";(groups[g]=groups[g]||[]).push(p)}
   const leg={municipal:"Câmara Municipal: vereadores fazem as leis da cidade, aprovam o orçamento e fiscalizam a prefeitura.",estadual:"Assembleia Legislativa: deputados estaduais fazem as leis do estado e fiscalizam o governador.",federal:"Congresso Nacional: Câmara dos Deputados (representa a população) e Senado (3 senadores por estado)."};
   const exe={municipal:"Prefeitura: executa os serviços da cidade, como ruas, coleta de lixo, postos de saúde, creches e ônibus.",estadual:"Governo do estado: polícias, ensino médio, hospitais estaduais e rodovias estaduais.",federal:"Governo federal: Presidência e ministérios, INSS, universidades federais, BRs e agências reguladoras."};
-  return `<div class="stack"><span class="eyebrow">Quem governa ${esc(cidadeNome())}</span><h1>Seus representantes</h1></div>
+  return `${topo("politica","Quem governa "+esc(cidadeNome()),"Seus representantes","Quem executa, quem fiscaliza e como falar com cada um, no município, no estado e na União.")}
   <div class="notice"><b>Demonstração</b><span>Nomes, partidos, projetos e votos desta tela são fictícios e servem para mostrar o funcionamento. A versão final carrega os dados das bases oficiais (lista no fim da página).</span></div>
   <div class="seg" role="group" aria-label="Esfera">${tabs.map(([k,n])=>`<button data-esf="${k}" aria-pressed="${polEsf===k}">${n}</button>`).join("")}</div>
   ${["Executivo","Legislativo"].filter(g=>groups[g]).map(g=>`<section class="office-group"><h3>${g}</h3>${intl?"":`<p class="muted" style="font-size:.9rem">${g==="Executivo"?exe[polEsf]:leg[polEsf]}</p>`}<div class="list">${groups[g].map(p=>personRow(p)).join("")}</div>${g==="Legislativo"&&!intl?`<p class="muted" style="font-size:.84rem">Mostrando alguns nomes. A lista completa vem das bases oficiais.</p>`:""}</section>`).join("")}
@@ -1284,13 +1368,13 @@ function oficiais(c){
     const f="TSE · eleições municipais de 2024";
     const suc=SUCESSOES[slugC(c)]; const ck=slugC(c)+"|prefeito";
     if(suc&&suc.cargo==="prefeito"&&m.vice){
-      o.municipal.exec.push(pReal(m.vice,"Prefeito(a) de "+c.nome,"municipal",f+" (eleito vice); assumiu a prefeitura",{nota:suc,chaveContato:ck}));
-      if(m.prefeito)o.municipal.exec.push(pReal(m.prefeito,"Ex-prefeito(a) de "+c.nome,"municipal",f,{nota:suc}));
+      o.municipal.exec.push(pReal(m.vice,"Prefeito(a) "+de(c.nome),"municipal",f+" (eleito vice); assumiu a prefeitura",{nota:suc,chaveContato:ck}));
+      if(m.prefeito)o.municipal.exec.push(pReal(m.prefeito,"Ex-prefeito(a) "+de(c.nome),"municipal",f,{nota:suc}));
     } else {
-      if(m.prefeito)o.municipal.exec.push(pReal(m.prefeito,"Prefeito(a) de "+c.nome,"municipal",f+(m.prefeito.sup?" (eleição suplementar)":""),{chaveContato:ck}));
+      if(m.prefeito)o.municipal.exec.push(pReal(m.prefeito,"Prefeito(a) "+de(c.nome),"municipal",f+(m.prefeito.sup?" (eleição suplementar)":""),{chaveContato:ck}));
       if(m.vice)o.municipal.exec.push(pReal(m.vice,"Vice-prefeito(a)","municipal",f));
     }
-    o.municipal.leg.push(grupo(c.nome+"|ver","Câmara Municipal de "+c.nome,`${m.vereadores.length} vereadores eleitos em 2024`,m.vereadores.map(v=>pReal(v,"Vereador(a) — "+c.nome,"municipal",f)),"municipal",f));
+    o.municipal.leg.push(grupo(c.nome+"|ver","Câmara Municipal "+de(c.nome),`${m.vereadores.length} vereadores eleitos em 2024`,m.vereadores.map(v=>pReal(v,"Vereador(a) — "+c.nome,"municipal",f)),"municipal",f));
   } else if(m===false)o.faltaMun=true;
   for(const pa of PASTAS_MUN)o.municipal.exec.push(secretarioPessoa("mun",c,pa));
   const e=Dados.estados&&Dados.estados[c.uf]; const br=Dados.estados&&Dados.estados.BR;
@@ -1633,7 +1717,7 @@ function viewPolitica(){
   const leg={municipal:"Câmara Municipal: vereadores fazem as leis da cidade, aprovam o orçamento e fiscalizam a prefeitura.",estadual:"Assembleia Legislativa: deputados estaduais fazem as leis do estado e fiscalizam o governador.",federal:"Congresso Nacional: Câmara dos Deputados, que representa a população, e Senado, com 3 senadores por estado."};
   const eleitos=sec.exec.filter(p=>!p.placeholder&&!p.crowd); const secs=sec.exec.filter(p=>p.placeholder||p.crowd);
   const fila=filaCidade().length; const at=Dados.meta&&Dados.meta.atualizado;
-  return `<div class="stack"><span class="eyebrow">Quem governa ${esc(cidadeNome())}</span><h1>Seus representantes</h1></div>
+  return `${topo("politica","Quem governa "+esc(cidadeNome()),"Seus representantes","Quem executa, quem fiscaliza e como falar com cada um, no município, no estado e na União.")}
   <p class="muted" style="font-size:.86rem">Dados oficiais do TSE, da Câmara e do Senado${at?`, atualizados em ${fmtDate(at)}`:""}. Secretários e ministros são informados por moradores e só valem depois de conferidos.</p>
   ${fila?`<button class="install" id="polFila" style="cursor:pointer;text-align:left;width:100%;color:var(--ink)"><span class="grow"><b>${fila} ${fila>1?"informações aguardam":"informação aguarda"} conferência</b><br><span class="muted">Ajude a manter os dados certos e ganhe XP.</span></span><span class="btn small primary">Conferir</span></button>`:""}
   <div class="seg" role="group" aria-label="Esfera">${[["municipal","Município"],["estadual","Estado"],["federal","União"]].map(([k,n])=>`<button data-esf="${k}" aria-pressed="${polEsf===k}">${n}</button>`).join("")}</div>
@@ -1737,10 +1821,10 @@ function viewPropostas(){
   if(propFiltro==="cidade")list=list.filter(p=>p.esfera!=="municipal"||(p.cidade===city.nome&&(p.uf||"")===(city.uf||"")));
   if(propFiltro==="minhas")list=list.filter(p=>p.autor===S.uid);
   list.sort((a,b)=>contaApoio(b.id)-contaApoio(a.id)||b.criado-a.criado);
-  return `<div class="stack"><span class="eyebrow">Participação</span><h1>Propostas de lei</h1><p class="muted">Sugira uma lei, junte apoios e envie a parlamentares. Uma proposta com muitos apoios é um argumento político difícil de ignorar.</p></div>
+  return `${topo("propostas","Participação","Propostas de lei","Sugira uma lei, junte apoios e envie a parlamentares. Uma proposta com muitos apoios é um argumento político difícil de ignorar.")}
   <button class="btn ipe" id="newProp">Sugerir projeto de lei</button>
   <div class="seg" role="group">${[["cidade","Para "+city.nome],["todas","Todas"],["minhas","Minhas"]].map(([k,n])=>`<button data-pf="${k}" aria-pressed="${propFiltro===k}">${esc(n)}</button>`).join("")}</div>
-  ${list.length?`<div class="list">${list.map(propItem).join("")}</div>`:`<div class="card flat empty"><svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/><path d="M10 12h6M10 16h6"/></svg><p><b>Nenhuma proposta aqui ainda.</b></p><p class="muted">Seja a primeira pessoa a sugerir uma lei. Comece pelo problema que você mais vê no dia a dia.</p></div>`}
+  ${list.length?`<div class="list">${list.map(propItem).join("")}</div>`:`<div class="card flat empty">${ART_VAZIO.propostas}<p><b>Nenhuma proposta aqui ainda.</b></p><p class="muted">Seja a primeira pessoa a sugerir uma lei. Comece pelo problema que você mais vê no dia a dia.</p></div>`}
   <details class="acc"><summary>O que torna uma proposta forte</summary><div class="body">
     <p><b>Uma ideia por proposta.</b> Projetos com muitos temas travam nas comissões.</p>
     <p><b>Esfera certa.</b> A Câmara Municipal não pode legislar sobre direito penal; o Congresso não decide o horário da coleta de lixo do seu bairro.</p>
@@ -2062,7 +2146,7 @@ function checkBadges(){
 let trilhaAberta=null;
 function viewAprender(){
   const feitas=Object.keys(Prog.d.aulas).length, total=Object.keys(AULAS).length;
-  return `<div class="stack"><span class="eyebrow">Escola Cívica</span><h1>Como a política chega à sua rua</h1><p class="muted">Aulas de 3 a 5 minutos com perguntas no fim. Cada aula vale 20 XP, cada trilha completa mais 50, e ações reais no app também contam.</p></div>
+  return `${topo("aprender","Escola Cívica","Como a política chega à sua rua","Aulas de 3 a 5 minutos com perguntas no fim. Cada aula vale 20 XP, cada trilha completa mais 50, e ações reais no app também contam.")}
   ${levelCard()}
   <div class="row" style="justify-content:space-between"><span class="muted">${feitas} de ${total} aulas concluídas</span><a href="#perfil">Seus badges</a></div>
   ${TRILHAS.map((t,ti)=>{const done=t.aulas.filter(a=>Prog.d.aulas[a.id]).length;const b=BADGES.find(x=>x.id===TRILHA_BADGE[t.id]);
@@ -2099,7 +2183,7 @@ function bindBadges(){document.querySelectorAll("[data-badge]").forEach(x=>x.onc
 /* ---------- PERFIL ---------- */
 let perfFiltro="todas";
 function viewPerfil(){
-  if(visitante())return `<div class="stack"><span class="eyebrow">Perfil</span><h1>Crie sua conta para participar</h1><p class="muted">Você pode explorar o app à vontade. Com a conta, você também envia cobranças com prazo, guarda o histórico de respostas, apoia relatos dos vizinhos, propõe leis e confere dados.</p></div>
+  if(visitante())return `${topo("perfil","Perfil","Crie sua conta para participar","Você pode explorar o app à vontade. Com a conta, você também envia cobranças com prazo, guarda o histórico de respostas, apoia relatos dos vizinhos, propõe leis e confere dados.")}
   <button class="btn primary" id="pfCriar">Criar conta com e-mail</button>
   ${levelCard()}${badgesSection()}
   <p class="muted" style="font-size:.86rem">Seu progresso nas aulas já fica guardado neste aparelho e continua depois que você criar a conta.</p>`;
@@ -2110,7 +2194,7 @@ function viewPerfil(){
   <div class="stat-row"><div class="stat"><b>${all.length}</b><span>Cobranças</span></div><div class="stat"><b>${cnt("respondida")+cnt("resolvida")}</b><span>Com resposta</span></div><div class="stat"><b>${cnt("resolvida")}</b><span>Resolvidas</span></div><div class="stat"><b>${cnt("vencida")}</b><span>Prazo vencido</span></div></div>
   <section class="stack"><div class="section-head"><h2>Histórico</h2></div>
     <div class="seg" role="group">${[["todas","Todas"],["enviada","Aguardando"],["respondida","Respondidas"],["resolvida","Resolvidas"],["vencida","Vencidas"]].map(([k,n])=>`<button data-pf2="${k}" aria-pressed="${perfFiltro===k}">${n}</button>`).join("")}</div>
-    ${list.length?`<div class="list">${list.map(recItem).join("")}</div>`:`<div class="card flat empty"><p><b>${all.length?"Nada com esse filtro.":"Seu histórico está vazio."}</b></p>${all.length?"":'<a class="btn primary" href="#relatar">Relatar o primeiro problema</a>'}</div>`}
+    ${list.length?`<div class="list">${list.map(recItem).join("")}</div>`:`<div class="card flat empty">${all.length?"":ART_VAZIO.cobrancas}<p><b>${all.length?"Nada com esse filtro.":"Seu histórico está vazio."}</b></p>${all.length?"":'<a class="btn primary" href="#relatar">Relatar o primeiro problema</a>'}</div>`}
   </section>
   ${levelCard()}
   ${badgesSection()}
