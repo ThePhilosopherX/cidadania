@@ -281,6 +281,9 @@ details.acc .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10p
 
 .avatar.grp{background:var(--ink);color:var(--paper);font-family:var(--f-mono);font-size:.82rem}
 .avatar.empty{background:transparent;border:2px dashed var(--line);color:var(--muted)}
+.aud-date{flex:none;width:46px;border-radius:8px;background:var(--sunk);display:flex;flex-direction:column;align-items:center;padding:6px 0;line-height:1}
+.aud-date b{font:850 1.3rem var(--f-display);font-stretch:80%}
+.aud-date span{font:700 .64rem var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 </style>
 
 <div id="app"></div>
@@ -699,6 +702,7 @@ function viewInicio(){
     ${redeStatus()}
     ${list.length?`<div class="list">${list.map(muralItem).join("")}</div>`:`<div class="card flat empty"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H4z"/><path d="M8 21h8M12 17v4"/></svg><p><b>${todos.length?"Nada com esse recorte.":"O mural de "+esc(city.nome)+" está vazio."}</b></p><p class="muted">Ao relatar, deixe marcado “Mostrar no mural” e informe o bairro e a rua. O mural nunca mostra seu nome, CPF ou contato.</p><a class="btn primary" href="#relatar">Fazer o primeiro relato</a></div>`}
   </section>
+  ${(()=>{const a=[...audLocal(city,"mun"),...audLocal(city,"est")].sort((x,y)=>x.c.valor.data.localeCompare(y.c.valor.data))[0];return a?`<button class="install" id="homeAud" style="cursor:pointer;text-align:left;width:100%;color:var(--ink)"><span class="grow"><span class="eyebrow">Próxima audiência pública</span><br><b>${esc(a.c.valor.tema)}</b><br><span class="muted">${esc(fmtDiaHora(a.c.valor.data+(a.c.valor.hora?"T"+a.c.valor.hora:"")))}${a.c.valor.local?" · "+esc(a.c.valor.local):""}</span></span></button>`:""})()}
   <section class="stack"><div class="section-head"><h2>Atalhos</h2></div>
     <div class="quick">
       ${[["buraco","Buraco na rua",'<path d="M3 17h18"/><ellipse cx="12" cy="14" rx="6" ry="2.5"/>'],["iluminacao","Poste apagado",'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 014 10.5V16H8v-2.5A6 6 0 0112 3z"/>'],["lixo","Lixo acumulado",'<path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13M9 7V4h6v3"/>'],["drenagem","Alagamento",'<path d="M12 3s6 7 6 11a6 6 0 01-12 0c0-4 6-11 6-11z"/>']].map(([k,n,ic])=>`<button data-quick="${k}"><span class="ico"><svg viewBox="0 0 24 24">${ic}</svg></span>${n}</button>`).join("")}
@@ -724,6 +728,7 @@ function bindInicio(){
     const d=novoDraft();Object.assign(d,{titulo:m.titulo,texto:`Também sou afetado(a) por este problema, já registrado por outros moradores no app Cidadania: ${m.resumo}`,bairro:m.bairro||"",rua:m.rua||"",local:m.local||"",cat:m.cat,catAuto:false,passo:2,publico:false});
     S.draft=d;location.hash="relatar";toast("Relato preenchido. Revise e acrescente o que você vê.")});
   bindApoios(); bindInstall();
+  const ha=$("#homeAud");if(ha)ha.onclick=()=>{const a=[...audLocal(S.cidade,"mun"),...audLocal(S.cidade,"est")].sort((x,y)=>x.c.valor.data.localeCompare(y.c.valor.data))[0];if(a)openAudLocal(a.c.id)};
 }
 
 /* ---------- rede, identidade e instalação ---------- */
@@ -999,7 +1004,8 @@ const Dados={meta:null,estados:null,deputados:null,senadores:null,partidos:{},cu
     try{
       const r=await fetch("data/meta.json",{cache:"no-cache"}); if(!r.ok)return; this.meta=await r.json(); this.disp=true;
       const get=n=>fetch(`data/${n}.json`).then(r=>r.ok?r.json():null).catch(()=>null);
-      const [e,d,s,p,c,at]=await Promise.all([get("estados"),get("deputados"),get("senadores"),get("partidos"),get("curadores"),get("atestadores")]);
+      const [e,d,s,p,c,at,au]=await Promise.all([get("estados"),get("deputados"),get("senadores"),get("partidos"),get("curadores"),get("atestadores"),get("audiencias_camara")]);
+      this.audiencias=au;
       const dec=k=>{try{return /^npub1/.test(k)&&window.NostrTools?window.NostrTools.nip19.decode(k).data:k}catch(x){return k}};
       this.atestadores=(Array.isArray(at)?at:[]).map(dec);
       this.estados=e;this.deputados=d;this.senadores=s;this.partidos=p||{};this.curadores=(Array.isArray(c)?c:[]).map(k=>{try{return /^npub1/.test(k)&&window.NostrTools?window.NostrTools.nip19.decode(k).data:k}catch(x){return k}});
@@ -1156,7 +1162,7 @@ function valorDe(alvo){
 const ST_TXT={verificado:"Verificado",pendente:"Aguardando conferência",contestado:"Contestado",removido:"Removido pela curadoria",recusado:"Recusado"};
 const ST_CLS={verificado:"s-resolvida",pendente:"s-enviada",contestado:"s-vencida",removido:"s-rascunho",recusado:"s-rascunho"};
 function stPill(a){return `<span class="pill ${ST_CLS[a.st]}"><i></i>${ST_TXT[a.st]}${a.st==="pendente"?` · ${Math.floor(a.conf)}/${a.precisa}`:""}</span>`}
-function valorTxt(c){return c.campo==="contato"?[c.valor&&c.valor.email,c.valor&&c.valor.telefone,c.valor&&c.valor.site&&(hostOf(c.valor.site)||c.valor.site)].filter(Boolean).join(" · "):c.campo==="canal"?`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.telefone?" · "+c.valor.telefone:""}${c.valor&&c.valor.url?" · "+(hostOf(c.valor.url)||c.valor.url):""}`:c.campo==="email"?c.valor:c.campo==="aviso"?(c.valor&&c.valor.texto)||"":`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.partido?" ("+c.valor.partido+")":""}`}
+function valorTxt(c){return c.campo==="audiencia"?`${(c.valor&&c.valor.tema)||""} · ${c.valor&&c.valor.data?fmtDiaHora(c.valor.data+(c.valor.hora?"T"+c.valor.hora:"")):""}`:c.campo==="contato"?[c.valor&&c.valor.email,c.valor&&c.valor.telefone,c.valor&&c.valor.site&&(hostOf(c.valor.site)||c.valor.site)].filter(Boolean).join(" · "):c.campo==="canal"?`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.telefone?" · "+c.valor.telefone:""}${c.valor&&c.valor.url?" · "+(hostOf(c.valor.url)||c.valor.url):""}`:c.campo==="email"?c.valor:c.campo==="aviso"?(c.valor&&c.valor.texto)||"":`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.partido?" ("+c.valor.partido+")":""}`}
 function curto(pk){return pk?pk.slice(0,8)+"…":"?"}
 const REGRAS_HTML=`<details class="acc"><summary>Como evitamos erros e fraudes</summary><div class="body" style="font-size:.92rem">
   <p><b>Dado oficial vem primeiro.</b> Eleitos, partidos e mandatos vêm do TSE, da Câmara e do Senado e não podem ser editados. Moradores só podem anexar um alerta, com fonte, se alguém deixou o cargo.</p>
@@ -1183,6 +1189,10 @@ const GUIA={
    ["Página do órgão","Procure “Fale conosco”, “Contato” ou “Ouvidoria” no site oficial."],
    ["Carta de Serviços ao Usuário","A Lei 13.460/2017 obriga cada órgão a publicar seus canais de atendimento nessa carta. Ela costuma estar no rodapé do site."],
    ["Prefira domínio oficial","Endereços terminados em .gov.br, .leg.br ou .jus.br passam com menos conferências. E-mail pessoal ou de provedor gratuito exige mais conferências e pode ser contestado."]]},
+ "aud":{t:"Audiência pública",onde:[
+   ["Agenda da casa legislativa","O site da Câmara Municipal ou da Assembleia publica a pauta das comissões, com data, hora, local e tema."],
+   ["Diário Oficial","Audiências exigidas por lei, como as do plano diretor e do orçamento, são convocadas por edital publicado no Diário Oficial."],
+   ["Site da prefeitura ou do órgão","Secretarias e agências também fazem audiências, por exemplo sobre licenciamento ambiental e concessões. O edital costuma ficar na página do órgão."]]},
  "contato":{t:"Contato de político",onde:[
    ["Site da Câmara Municipal ou da Assembleia","A página de cada vereador ou deputado estadual costuma trazer o e-mail e o telefone do gabinete."],
    ["Site da prefeitura ou do governo","O gabinete do prefeito ou do governador aparece em “Gabinete”, “Agenda” ou “Contato”."],
@@ -1220,6 +1230,7 @@ function openComoContribuir(){
 function openContrib(op){
   const tipo=op.campo;
   const campos=tipo==="email"?`<label class="f">E-mail oficial do órgão<input type="email" id="ctVal" value="${esc(op.valor||"")}" placeholder="ouvidoria@prefeitura.gov.br"></label>`
+    :tipo==="audiencia"?`<label class="f">Tema<input type="text" id="ctVal" maxlength="160" placeholder="Ex.: Situação das encostas do Morro da Queimada"></label><div class="grid2"><label class="f">Data<input type="date" id="ctData"></label><label class="f">Hora<input type="time" id="ctHora"></label></div><label class="f">Comissão ou órgão que convoca<input type="text" id="ctOrg" placeholder="Ex.: Comissão de Obras da Câmara Municipal"></label><label class="f">Local<input type="text" id="ctLocal" placeholder="Ex.: Plenário da Câmara, Rua ..."></label><label class="f">Como participar<input type="text" id="ctPart" maxlength="200" placeholder="Ex.: aberta ao público; inscrição para fala no local; transmissão no YouTube"></label><label class="f">Link de inscrição ou transmissão (opcional)<input type="text" inputmode="url" id="ctUrl"></label>`
     :tipo==="contato"?`<label class="f">E-mail do gabinete<input type="email" id="ctVal" placeholder="nome@camara.cidade.mg.gov.br"></label><label class="f">Telefone do gabinete<input type="tel" id="ctTel"></label><label class="f">Página oficial (link)<input type="text" inputmode="url" id="ctUrl" placeholder="https://…leg.br/…"></label>`
     :tipo==="canal"?`<label class="f">Nome da central<input type="text" id="ctVal" placeholder="Ex.: Central 156, Ouvidoria Municipal"></label><label class="f">Site ou aplicativo (link)<input type="text" inputmode="url" id="ctUrl" placeholder="https://…"></label><label class="f">Telefone (se houver)<input type="tel" id="ctTel" placeholder="Ex.: 156"></label>`
     :tipo==="aviso"?`<label class="f">O que mudou?<textarea id="ctVal" style="min-height:80px" placeholder="Ex.: renunciou em 03/2026; assumiu o vice."></textarea></label>`
@@ -1245,7 +1256,8 @@ function openContrib(op){
         const raw=$("#ctVal",el).value.trim(); const fonte=fonteIn.value.trim();
         if(fonte&&!hostOf(fonte))return show("O link precisa começar com https://.");
         let valor;
-        if(tipo==="contato"){const tel=$("#ctTel",el).value.trim(),u=$("#ctUrl",el).value.trim();if(!raw&&!tel&&!u)return show("Informe ao menos o e-mail, o telefone ou a página.");if(raw&&!emailOk(raw))return show("Escreva um e-mail completo.");if(u&&!hostOf(u))return show("O link da página precisa começar com https://.");valor={email:raw.toLowerCase(),telefone:tel,site:u}}
+        if(tipo==="audiencia"){const data=$("#ctData",el).value,u=$("#ctUrl",el).value.trim();if(raw.length<8)return show("Escreva o tema da audiência.");if(!data)return show("Informe a data.");if(data<hoje())return show("A data já passou.");if(!fonte)return show("Audiências precisam do link da fonte, como a agenda da casa legislativa ou o Diário Oficial.");if(u&&!hostOf(u))return show("O link precisa começar com https://.");valor={tema:raw,data,hora:$("#ctHora",el).value,orgao:$("#ctOrg",el).value.trim(),local:$("#ctLocal",el).value.trim(),participar:$("#ctPart",el).value.trim(),link:u}}
+        else if(tipo==="contato"){const tel=$("#ctTel",el).value.trim(),u=$("#ctUrl",el).value.trim();if(!raw&&!tel&&!u)return show("Informe ao menos o e-mail, o telefone ou a página.");if(raw&&!emailOk(raw))return show("Escreva um e-mail completo.");if(u&&!hostOf(u))return show("O link da página precisa começar com https://.");valor={email:raw.toLowerCase(),telefone:tel,site:u}}
         else if(tipo==="canal"){const u=$("#ctUrl",el).value.trim(),tel=$("#ctTel",el).value.trim();if(raw.length<3)return show("Escreva o nome da central.");if(!u&&!tel)return show("Informe o link ou o telefone da central.");if(u&&!hostOf(u))return show("O link da central precisa começar com https://.");valor={nome:raw,url:u,telefone:tel}}
         else if(tipo==="email"){if(!emailOk(raw))return show("Escreva um e-mail completo, como ouvidoria@cidade.mg.gov.br.");valor=raw.toLowerCase()}
         else if(tipo==="aviso"){if(raw.length<10)return show("Descreva a mudança em pelo menos uma frase.");if(!fonte)return show("Alertas sobre dados oficiais precisam de link da fonte.");valor={texto:raw}}
@@ -1307,6 +1319,84 @@ function openFila(){
     ${f.length?`<div class="list">${f.map(x=>contribRow(x.c,x.a)).join("")}</div>`:`<p><b>Nada para conferir agora.</b></p>`}<button class="btn small" id="filaComo">Como conferir e como contribuir</button>${REGRAS_HTML}`,el=>{bindContribRows(el);$("#filaComo",el).onclick=()=>{closeSheet();openComoContribuir()}});
 }
 
+/* ---------- AUDIÊNCIAS PÚBLICAS ---------- */
+const alvoAud=(nivel,c,id)=>nivel==="mun"?`aud|${slugC(c)}|${id}`:`aud|${c.uf}|${id}`;
+function audLocal(c,nivel){
+  const pref=nivel==="mun"?`aud|${slugC(c)}|`:`aud|${c.uf}|`; const hojeS=hoje();
+  return S.contribs.filter(x=>x.campo==="audiencia"&&x.alvo.startsWith(pref)&&x.valor&&x.valor.data>=hojeS)
+    .map(x=>({c:x,a:avaliar(x)})).filter(x=>x.a.st==="verificado"||x.a.st==="pendente")
+    .sort((x,y)=>(x.c.valor.data+(x.c.valor.hora||"")).localeCompare(y.c.valor.data+(y.c.valor.hora||"")));
+}
+function fmtDiaHora(iso){try{const d=new Date(iso.length<=10?iso+"T12:00":iso);return d.toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"short"})+(iso.length>10?" · "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"")}catch(e){return iso}}
+function gcalLink({titulo,inicio,local,detalhes}){
+  const st=(inicio.length<=10?inicio+"T09:00":inicio).replace(/[-:]/g,"").slice(0,13)+"00";
+  const d=new Date((inicio.length<=10?inicio+"T09:00":inicio)); const e=new Date(d.getTime()+2*3600e3);
+  const p2=n=>String(n).padStart(2,"0"); const en=`${e.getFullYear()}${p2(e.getMonth()+1)}${p2(e.getDate())}T${p2(e.getHours())}${p2(e.getMinutes())}00`;
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(titulo)+"&dates="+st+"/"+en+"&ctz=America/Sao_Paulo&location="+encodeURIComponent(local||"")+"&details="+encodeURIComponent(detalhes||"");
+}
+function audRowLocal(x){const v=x.c.valor;return `<button class="item-btn" data-audc="${esc(x.c.id)}"><span class="aud-date"><b>${esc(new Date(v.data+"T12:00").getDate())}</b><span>${esc(new Date(v.data+"T12:00").toLocaleDateString("pt-BR",{month:"short"}))}</span></span><span class="grow stack" style="gap:3px"><b>${esc(v.tema)}</b><span class="muted" style="font-size:.84rem">${esc([v.hora,v.orgao,v.local].filter(Boolean).join(" · "))}</span><span>${x.a.st==="verificado"?'<span class="pill s-resolvida"><i></i>Conferida</span>':'<span class="pill s-enviada"><i></i>Aguardando conferência</span>'}</span></span></button>`}
+function audRowCamara(a){const d=new Date(a.inicio);return `<button class="item-btn" data-audf="${esc(a.id)}"><span class="aud-date"><b>${d.getDate()}</b><span>${esc(d.toLocaleDateString("pt-BR",{month:"short"}))}</span></span><span class="grow stack" style="gap:3px"><b>${esc(a.tema.length>160?a.tema.slice(0,157)+"…":a.tema)}</b><span class="muted" style="font-size:.84rem">${esc(d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}))} · ${esc(a.orgao||"Câmara dos Deputados")}</span></span></button>`}
+let audBusca="";
+function audienciasSecao(esfera){
+  const c=S.cidade;
+  if(esfera==="federal"){
+    const lista=((Dados.audiencias&&Dados.audiencias.itens)||[]).filter(a=>!audBusca||norm(a.tema+" "+a.orgao+" "+a.orgaoNome).includes(norm(audBusca)));
+    return `<section class="office-group" id="audSec"><h3>Audiências públicas</h3><p class="muted" style="font-size:.9rem">Próximas audiências nas comissões da Câmara dos Deputados, dos dados abertos da Câmara. As do Senado estão no portal e-Cidadania.</p>
+      <label class="f">Buscar por tema ou comissão<input type="search" id="audQ" value="${esc(audBusca)}" placeholder="Ex.: saúde, mineração, educação"></label>
+      ${lista.length?`<div class="list">${lista.slice(0,15).map(audRowCamara).join("")}</div>${lista.length>15?`<p class="muted" style="font-size:.84rem">Mostrando 15 de ${lista.length}. Refine a busca para ver outras.</p>`:""}`:`<p class="muted">${Dados.audiencias?"Nenhuma audiência encontrada com essa busca.":"Carregando a agenda da Câmara…"}</p>`}
+      <div class="row"><a class="btn small" href="https://www12.senado.leg.br/ecidadania" target="_blank" rel="noopener">Audiências do Senado (e-Cidadania)</a><button class="btn small ghost" id="audComo">Como participar</button></div></section>`;
+  }
+  const nivel=esfera==="municipal"?"mun":"est"; const lista=audLocal(c,nivel);
+  const casa=esfera==="municipal"?`Câmara Municipal de ${c.nome}`:(c.uf==="DF"?"Câmara Legislativa do DF":`Assembleia Legislativa — ${UFS[c.uf]||c.uf}`);
+  return `<section class="office-group" id="audSec"><h3>Audiências públicas</h3><p class="muted" style="font-size:.9rem">Audiências da ${esc(casa)} e de ${esfera==="municipal"?"órgãos da prefeitura":"órgãos do estado"}, informadas por moradores com fonte.</p>
+    ${lista.length?`<div class="list">${lista.map(audRowLocal).join("")}</div>`:`<p class="muted">Nenhuma audiência informada ainda. Se você viu uma no site da ${esc(casa)} ou no Diário Oficial, informe para todos saberem.</p>`}
+    <div class="row"><button class="btn small primary" id="audNova">Informar audiência</button><button class="btn small ghost" id="audComo">Como participar</button><button class="btn small ghost" id="audPedir">Pedir uma audiência</button></div></section>`;
+}
+function bindAudiencias(esfera){
+  const q=$("#audQ");if(q)q.oninput=e=>{audBusca=e.target.value;render()};
+  const cm=$("#audComo");if(cm)cm.onclick=openComoParticipar;
+  const nv=$("#audNova");if(nv)nv.onclick=()=>{const nivel=esfera==="municipal"?"mun":"est";openContrib({alvo:alvoAud(nivel,S.cidade,Date.now().toString(36)+uidLocal()),campo:"audiencia",rotulo:`Audiência pública — ${esfera==="municipal"?S.cidade.nome:(UFS[S.cidade.uf]||S.cidade.uf)}`})};
+  const pd=$("#audPedir");if(pd)pd.onclick=()=>openPedirAudiencia(esfera);
+  document.querySelectorAll("[data-audf]").forEach(b=>b.onclick=()=>openAudCamara(b.dataset.audf));
+  document.querySelectorAll("[data-audc]").forEach(b=>b.onclick=()=>openAudLocal(b.dataset.audc));
+}
+function openAudCamara(id){
+  const a=((Dados.audiencias&&Dados.audiencias.itens)||[]).find(x=>String(x.id)===String(id)); if(!a)return;
+  openSheet("Audiência pública",`<span class="eyebrow">${esc(fmtDiaHora(a.inicio))} · ${esc(a.orgao)}</span><p>${esc(a.tema)}</p>
+    <p class="muted" style="font-size:.9rem">${esc(a.orgaoNome)}${a.local?` · ${esc(a.local)}`:""}${a.situacao?` · ${esc(a.situacao)}`:""}</p>
+    <div class="row"><a class="btn primary" href="${esc(a.url)}" target="_blank" rel="noopener">Página oficial</a><a class="btn" href="${esc(gcalLink({titulo:"Audiência pública: "+a.tema.slice(0,80),inicio:a.inicio,local:"Câmara dos Deputados, "+(a.local||""),detalhes:a.url}))}" target="_blank" rel="noopener">Adicionar à agenda</a>${a.video?`<a class="btn ghost" href="${esc(a.video)}" target="_blank" rel="noopener">Transmissão</a>`:""}</div>
+    <div class="why"><b>Como participar a distância.</b> Muitas audiências da Câmara aceitam perguntas pelo portal e-Democracia durante a transmissão. Entre com a conta gov.br, abra a audiência e envie sua pergunta; o presidente da comissão escolhe quais ler.</div>
+    <a class="btn small" href="https://edemocracia.camara.leg.br" target="_blank" rel="noopener" style="align-self:flex-start">Abrir o e-Democracia</a>
+    <p class="muted" style="font-size:.82rem">Fonte: dados abertos da Câmara dos Deputados.</p>`);
+}
+function openAudLocal(cid){
+  const c=S.contribs.find(x=>x.id===cid); if(!c)return; const v=c.valor, a=avaliar(c);
+  const inicio=v.data+(v.hora?"T"+v.hora:"");
+  openSheet("Audiência pública",`<span class="eyebrow">${esc(fmtDiaHora(inicio))}${v.orgao?" · "+esc(v.orgao):""}</span><h2>${esc(v.tema)}</h2>
+    <div class="row">${stPill(a)}</div>
+    ${v.local?`<p><b>Local:</b> ${esc(v.local)}</p>`:""}${v.participar?`<p><b>Como participar:</b> ${esc(v.participar)}</p>`:""}
+    <div class="row">${v.link?`<a class="btn primary" href="${esc(v.link)}" target="_blank" rel="noopener">Inscrição ou transmissão</a>`:""}<a class="btn" href="${esc(gcalLink({titulo:"Audiência pública: "+v.tema,inicio,local:v.local,detalhes:[v.participar,v.link,c.fonte].filter(Boolean).join("\n")}))}" target="_blank" rel="noopener">Adicionar à agenda</a><button class="btn ghost" id="audConf">Fonte e conferência</button></div>
+    ${a.st!=="verificado"?`<p class="muted" style="font-size:.86rem">Ainda não conferida por outros moradores. Confira a data na fonte antes de ir.</p>`:""}`,el=>{$("#audConf",el).onclick=()=>{closeSheet();openRevisar(cid)}});
+}
+function openComoParticipar(){
+  openSheet("Como participar de uma audiência pública",`<p>Audiência pública é uma reunião aberta em que parlamentares ou órgãos do governo ouvem a população e especialistas sobre um tema, antes de decidir. Qualquer pessoa pode assistir, e em muitas é possível falar ou mandar perguntas.</p>
+    <ol class="flow">
+      <li><div><b>Descubra a data</b><br><span class="muted">Na agenda das comissões do site da Câmara Municipal, da Assembleia ou do Congresso, no Diário Oficial e aqui no app.</span></div></li>
+      <li><div><b>Leia o tema antes</b><br><span class="muted">Veja o projeto ou o problema em discussão. Uma fala curta e concreta, com um exemplo do seu bairro, pesa mais que um discurso genérico.</span></div></li>
+      <li><div><b>Presencialmente</b><br><span class="muted">Chegue cedo e leve um documento com foto. Para falar, inscreva-se com a secretaria da comissão no início da reunião; o tempo costuma ser de 3 a 5 minutos.</span></div></li>
+      <li><div><b>A distância</b><br><span class="muted">Na Câmara dos Deputados, pelo e-Democracia; no Senado, pelo e-Cidadania. Nas câmaras municipais e assembleias, veja se há transmissão e formulário de perguntas no site.</span></div></li>
+      <li><div><b>Por escrito</b><br><span class="muted">Você pode mandar uma contribuição por e-mail à comissão, pedindo que ela conste nos registros da audiência.</span></div></li>
+      <li><div><b>Depois</b><br><span class="muted">Acompanhe a ata e o relatório. Se a audiência gerou compromissos, cobre-os com as ferramentas do app.</span></div></li>
+    </ol>
+    <div class="why"><b>Não há audiência sobre o seu problema?</b> Qualquer vereador ou deputado pode pedir uma, por requerimento à comissão. Use “Pedir uma audiência” para mandar o pedido aos parlamentares.</div>
+    <div class="row"><a class="btn small" href="https://edemocracia.camara.leg.br" target="_blank" rel="noopener">e-Democracia (Câmara)</a><a class="btn small" href="https://www12.senado.leg.br/ecidadania" target="_blank" rel="noopener">e-Cidadania (Senado)</a></div>`);
+}
+function openPedirAudiencia(esfera){
+  const o=oficiais(S.cidade); const g=(esfera==="municipal"?o.municipal.leg:o.estadual.leg)[0];
+  const texto=`Prezados(as) integrantes da ${g?g.nome:"casa legislativa"},\n\nSou ${S.perfil.cidadeVoto?"eleitor(a) em "+S.perfil.cidadeVoto:"morador(a) de "+cidadeNome()} e peço que seja apresentado requerimento para a realização de audiência pública sobre o seguinte tema:\n\n[descreva o problema, onde acontece, desde quando e quem é afetado]\n\nSolicito que sejam convidados os órgãos responsáveis e os moradores afetados, e que a audiência tenha transmissão e possibilidade de participação a distância.\n\nAtenciosamente,\n${S.perfil.nome}`;
+  openSheet("Pedir uma audiência pública",`<p class="muted">Audiências são convocadas por requerimento de parlamentares. Envie o pedido a todos de uma vez; basta um deles apresentar o requerimento.</p>${blocoEnvio(g?[g]:[],texto,"audP")}${g?`<button class="btn small ghost" id="audVer">Ver a lista de ${esc(esfera==="municipal"?"vereadores":"deputados")}</button>`:""}`,el=>{bindEnvio(el,g?[g]:[],"audP");const v=$("#audVer",el);if(v)v.onclick=()=>{closeSheet();openPerson(g)}});
+}
+
 /* ---------- POLÍTICA (tela) ---------- */
 let polEsf="municipal";
 function viewPolitica(){
@@ -1327,6 +1417,7 @@ function viewPolitica(){
   ${sec.eleitos&&sec.eleitos.length?`<section class="office-group"><h3>Eleitos em 2026</h3><p class="muted" style="font-size:.9rem">Tomam posse em ${polEsf==="federal"?"5":"6"} de janeiro de 2027.</p><div class="list">${sec.eleitos.map(p=>personRow(p)).join("")}</div></section>`:""}
   <section class="office-group"><h3>${polEsf==="federal"?"Ministérios":"Secretarias"}</h3><p class="muted" style="font-size:.9rem">Informados e conferidos por moradores. Toque em um cargo vazio para informar quem ocupa.</p><button class="btn small" id="comoContrib" style="align-self:flex-start">Como contribuir com dados</button><div class="list">${secs.map(p=>personRow(p)).join("")}</div></section>
   <section class="office-group"><h3>Legislativo</h3><p class="muted" style="font-size:.9rem">${leg[polEsf]}</p>${sec.leg.length?`<div class="list">${sec.leg.map(p=>personRow(p)).join("")}</div>`:`<p class="muted">Dados ainda não carregados.</p>`}</section>
+  ${audienciasSecao(polEsf)}
   <section class="stack"><h2>Órgãos e problemas desta esfera</h2><div class="tbl-wrap"><table><thead><tr><th>Problema</th><th>Órgão</th></tr></thead><tbody>${CATS.filter(c=>c.e===polEsf).map(c=>`<tr><td>${esc(c.n)}</td><td>${esc(c.org)}</td></tr>`).join("")}</tbody></table></div></section>
   ${REGRAS_HTML}
   <section class="card stack"><h3>Fontes</h3>
@@ -1341,6 +1432,7 @@ function bindPolitica(){
   document.querySelectorAll("[data-esf]").forEach(b=>b.onclick=()=>{polEsf=b.dataset.esf;render()});
   const f=$("#polFila");if(f)f.onclick=openFila; bindPeople();
   const cc=$("#comoContrib");if(cc)cc.onclick=openComoContribuir;
+  bindAudiencias(polEsf);
   const pc=$("#polCanal");if(pc)pc.onclick=()=>openContrib({alvo:alvoCanal(S.cidade),campo:"canal",rotulo:`Central de atendimento — ${S.cidade.nome}`});
 }
 function personRow(p,papel){
