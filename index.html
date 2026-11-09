@@ -268,6 +268,8 @@ details.acc .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10p
 .aula-body p{max-width:65ch}
 @media (prefers-reduced-motion:no-preference){.celebrate svg{animation:pop .5s cubic-bezier(.2,1.4,.4,1)}@keyframes pop{from{transform:scale(.6) rotate(-8deg)}to{transform:none}}}
 
+.avatar.grp{background:var(--ink);color:var(--paper);font-family:var(--f-mono);font-size:.82rem}
+.avatar.empty{background:transparent;border:2px dashed var(--line);color:var(--muted)}
 </style>
 
 <div id="app"></div>
@@ -283,14 +285,14 @@ const CITIES = []; for (const uf in MUN) for (const c of MUN[uf].split("|")) CIT
 const CATS = [
  {k:"buraco",n:"Buracos, asfalto e calçadas",e:"municipal",org:"Secretaria Municipal de Obras e Infraestrutura",pasta:"Obras e Infraestrutura",min:"Ministério das Cidades",kw:"buraco asfalto calcada pavimento cratera rua esburacada meio-fio tapa-buraco",why:"A manutenção das vias urbanas é competência do município (Constituição, art. 30). Rodovias estaduais e federais (as BRs) ficam com o estado e a União."},
  {k:"iluminacao",n:"Iluminação pública",e:"municipal",org:"Órgão municipal de iluminação pública",pasta:"Serviços Urbanos",min:"Ministério de Minas e Energia",kw:"poste lampada luz apagada escuro iluminacao refletor",why:"Desde 2015 os municípios são donos da iluminação pública e a custeiam com a contribuição cobrada na conta de luz (COSIP, Contribuição para o Custeio do Serviço de Iluminação Pública). Falta de energia na sua casa é outro caso: é com a distribuidora."},
- {k:"lixo",n:"Lixo, entulho e limpeza",e:"municipal",org:"Serviço municipal de limpeza urbana",pasta:"Limpeza Urbana / Meio Ambiente",min:"Ministério do Meio Ambiente e Mudança do Clima",kw:"lixo entulho coleta sujeira varricao lixeira descarte caçamba",why:"Coleta e limpeza urbana são serviços locais. A Política Nacional de Resíduos Sólidos (Lei 12.305/2010) define as regras gerais; a prefeitura executa."},
+ {k:"lixo",n:"Lixo, entulho e limpeza",e:"municipal",org:"Serviço municipal de limpeza urbana",pasta:"Serviços Urbanos",min:"Ministério do Meio Ambiente e Mudança do Clima",kw:"lixo entulho coleta sujeira varricao lixeira descarte caçamba",why:"Coleta e limpeza urbana são serviços locais. A Política Nacional de Resíduos Sólidos (Lei 12.305/2010) define as regras gerais; a prefeitura executa."},
  {k:"transporte",n:"Ônibus, trânsito e mobilidade",e:"municipal",org:"Secretaria Municipal de Transportes e Mobilidade",pasta:"Transportes e Mobilidade",min:"Ministério das Cidades",kw:"onibus ponto linha transito semaforo ciclovia faixa motorista tarifa brt",why:"O transporte coletivo urbano é serviço público municipal (Constituição, art. 30, V). Trens e metrôs metropolitanos e ônibus intermunicipais costumam ser do estado."},
  {k:"ubs",n:"Posto de saúde e atenção básica",e:"municipal",org:"Secretaria Municipal de Saúde",pasta:"Saúde",min:"Ministério da Saúde",kw:"posto ubs consulta medico vacina remedio farmacia agente de saude clinica da familia",why:"No SUS (Sistema Único de Saúde), a atenção básica é gerida pelo município, com dinheiro também da União e do estado. Ouvidoria do SUS: telefone 136."},
  {k:"hospital",n:"Hospitais e emergências",e:"estadual",org:"Secretaria Estadual de Saúde",pasta:"Saúde",min:"Ministério da Saúde",kw:"hospital emergencia internacao cirurgia leito upa maternidade",why:"Hospitais de média e alta complexidade costumam ser do estado, mas muitos são municipais ou federais. Confira quem administra a unidade antes de enviar."},
  {k:"escola_mun",n:"Creches e ensino fundamental",e:"municipal",org:"Secretaria Municipal de Educação",pasta:"Educação",min:"Ministério da Educação",kw:"creche escola fundamental merenda professor vaga transporte escolar",why:"A Constituição (art. 211) dá prioridade ao município na educação infantil e no ensino fundamental."},
  {k:"escola_est",n:"Ensino médio",e:"estadual",org:"Secretaria Estadual de Educação",pasta:"Educação",min:"Ministério da Educação",kw:"ensino medio colegio estadual",why:"O ensino médio é responsabilidade prioritária dos estados (Constituição, art. 211)."},
  {k:"seguranca",n:"Segurança pública",e:"estadual",org:"Secretaria Estadual de Segurança Pública (Polícias Militar e Civil)",pasta:"Segurança Pública",min:"Ministério da Justiça e Segurança Pública",kw:"assalto roubo furto policia violencia tiroteio trafico patrulha delegacia",why:"As polícias Militar e Civil são estaduais (Constituição, art. 144). Em emergência, ligue 190: este app não substitui o socorro."},
- {k:"saneamento",n:"Água e esgoto",e:"estadual",org:"Companhia de saneamento responsável pela cidade",pasta:"Saneamento / Infraestrutura",min:"Ministério das Cidades",kw:"agua esgoto vazamento falta d'agua cano encanamento saneamento",why:"O saneamento é titularidade do município, mas em muitas cidades quem presta o serviço é uma companhia estadual ou empresa concessionária. A agência reguladora também recebe queixas."},
+ {k:"saneamento",n:"Água e esgoto",e:"estadual",org:"Companhia de saneamento responsável pela cidade",pasta:"Infraestrutura",min:"Ministério das Cidades",kw:"agua esgoto vazamento falta d'agua cano encanamento saneamento",why:"O saneamento é titularidade do município, mas em muitas cidades quem presta o serviço é uma companhia estadual ou empresa concessionária. A agência reguladora também recebe queixas."},
  {k:"drenagem",n:"Enchentes, encostas e drenagem",e:"municipal",org:"Defesa Civil Municipal e Secretaria de Obras",pasta:"Defesa Civil",min:"Ministério da Integração e do Desenvolvimento Regional",kw:"alagamento enchente bueiro deslizamento encosta inundacao chuva rachadura risco",why:"Drenagem urbana e Defesa Civil são municipais, com apoio do estado e da União. Em risco imediato, ligue 199."},
  {k:"verde",n:"Praças, árvores e parques",e:"municipal",org:"Secretaria Municipal de Meio Ambiente / Parques e Jardins",pasta:"Meio Ambiente",min:"Ministério do Meio Ambiente e Mudança do Clima",kw:"arvore poda praca parque jardim galho caida",why:"Praças, poda e arborização urbana são serviços municipais."},
  {k:"poluicao",n:"Barulho e poluição",e:"municipal",org:"Fiscalização ambiental e de posturas do município",pasta:"Meio Ambiente",min:"Ministério do Meio Ambiente e Mudança do Clima",kw:"barulho som alto fumaca poluicao cheiro ruido festa",why:"O controle de ruído e as posturas urbanas são definidos por lei municipal."},
@@ -336,7 +338,7 @@ const S = {
   perfil: lsGet("cid.perfil",null),
   tutorialVisto: lsGet("cid.tut",false),
   cidade: lsGet("cid.cidade",null),
-  reclamacoes: [], mural: [], propostas: [], apoios: [], diretorio: {}, cidadesMundo: [],
+  reclamacoes: [], mural: [], propostas: [], apoios: [], diretorio: {}, cidadesMundo: [], contribs: [], cvotos: [],
   uid: lsGet("cid.uid",null) || (()=>{const u="local_"+uidLocal();lsSet("cid.uid",u);return u})(),
   online:false, assets:null, sample:null, draft:null
 };
@@ -356,7 +358,7 @@ const Store = {
     claude.use("sample").then(s=>{S.sample=s;render()}).catch(()=>{});
   },
   subscribeAll(){
-    const map={mural:"mural",propostas:"propostas",apoios:"apoios",diretorio:"diretorio",cidadesMundo:"cidades_mundo"};
+    const map={mural:"mural",propostas:"propostas",apoios:"apoios",diretorio:"diretorio",cidadesMundo:"cidades_mundo",contribs:"contrib",cvotos:"cvoto"};
     if(this.db){
       const t=setTimeout(()=>{S.loading=false;render()},10000);
       this.db.collection(this.priv()).onSnapshot(snap=>{clearTimeout(t);
@@ -375,7 +377,7 @@ const Store = {
       }
     } else {
       S.reclamacoes=lsGet("cid.rec",[]); S.mural=lsGet("cid.mural",[]); S.propostas=lsGet("cid.prop",[]);
-      S.apoios=lsGet("cid.apoios",[]); S.diretorio=lsGet("cid.dir",{}); S.cidadesMundo=lsGet("cid.mundo",[]);
+      S.apoios=lsGet("cid.apoios",[]); S.diretorio=lsGet("cid.dir",{}); S.cidadesMundo=lsGet("cid.mundo",[]); S.contribs=lsGet("cid.contrib",[]); S.cvotos=lsGet("cid.cvoto",[]);
     }
   },
   async savePerfil(p){S.perfil=p;lsSet("cid.perfil",p);if(this.db){try{await this.db.doc(this.priv()+"/perfil").set({dados:p})}catch(e){toast("Não foi possível salvar o perfil no servidor; ficou neste aparelho.")}}},
@@ -430,7 +432,7 @@ function fakePerson(seed,cargo,esfera){
   const cor=["#0A6B4B","#2457A6","#9A4214","#6B4FA0","#1F7A8C","#8C2F4B"][Math.floor(r()*6)];
   return {id:"p"+hash(seed),nome,partido:p,cargo,esfera,apresentados,aprovados,rejeitados,tramitacao:apresentados-aprovados-rejeitados,pls,votos,acoes,presenca,cor};
 }
-function officials(city){
+function officialsDemo(city){
   const c=city||{nome:"Sua cidade",uf:"XX"}; const key=c.nome+"|"+c.uf; const out={municipal:[],estadual:[],federal:[]};
   if(c.pais&&c.pais!=="Brasil"){
     out.municipal.push(fakePerson(key+"pref","Prefeito(a) / Chefe do governo local","local"));
@@ -449,8 +451,8 @@ function officials(city){
   for(let i=0;i<3;i++)out.federal.push(fakePerson(c.uf+"depf"+i,"Deputado(a) federal — "+c.uf,"federal"));
   return out;
 }
-function responsaveis(cat,city){
-  const c=city||{nome:"Sua cidade",uf:"XX"}; const key=c.nome+"|"+c.uf; const o=officials(c); const list=[];
+function responsaveisDemo(cat,city){
+  const c=city||{nome:"Sua cidade",uf:"XX"}; const key=c.nome+"|"+c.uf; const o=officialsDemo(c); const list=[];
   const intl=c.pais&&c.pais!=="Brasil";
   if(intl){return [{p:o.municipal[0],papel:"Executa"},{p:o.municipal[1],papel:"Fiscaliza"},{p:o.estadual[0],papel:"Apoia"}]}
   if(cat.e==="municipal"){
@@ -621,7 +623,7 @@ function bindCidade(root,gate){
     if(v.length>=2){list=[...world.filter(c=>norm(c.nome+" "+c.pais).includes(v)),...CITIES.filter(c=>norm(c.nome).startsWith(v)),...CITIES.filter(c=>!norm(c.nome).startsWith(v)&&norm(c.nome).includes(v))].slice(0,12)}
     else list=[{nome:"Rio de Janeiro",uf:"RJ"},{nome:"São Paulo",uf:"SP"},{nome:"Belo Horizonte",uf:"MG"},{nome:"Ouro Preto",uf:"MG"},{nome:"Salvador",uf:"BA"},{nome:"Recife",uf:"PE"}];
     res.innerHTML=list.length?list.map((c,i)=>`<button class="item-btn" data-i="${i}"><span class="grow"><b>${esc(c.nome)}</b> <span class="muted">${esc(c.pais?`${c.uf?c.uf+", ":""}${c.pais}`:UFS[c.uf]||c.uf)}</span></span></button>`).join(""):`<p class="muted">Nenhuma cidade com esse nome. Confira a grafia ou adicione abaixo, se for fora do Brasil.</p>`;
-    res.querySelectorAll("button").forEach(b=>b.onclick=()=>{const c=list[+b.dataset.i];S.cidade=c;lsSet("cid.cidade",c);if(!gate)closeSheet();toast("Cidade: "+cidadeNome());render()});
+    res.querySelectorAll("button").forEach(b=>b.onclick=()=>{const c=list[+b.dataset.i];S.cidade=c;lsSet("cid.cidade",c);Dados.loadMun(c.uf);if(!gate)closeSheet();toast("Cidade: "+cidadeNome());render()});
   };
   q.oninput=show; show(); if(!gate)setTimeout(()=>q.focus(),50);
   $("#fMundo",root).onsubmit=async e=>{e.preventDefault();const nome=$("#mdNome",root).value.trim(),pais=$("#mdPais",root).value.trim(),regiao=$("#mdReg",root).value.trim();
@@ -810,30 +812,28 @@ function viewRelatar(){
       <h2>${esc(cat.org)}</h2><p class="muted">${esc(cat.n)}</p>
       <div class="why"><b>Por que é com ${cat.e==="municipal"?"a prefeitura":cat.e==="estadual"?"o estado":"a União"}?</b> ${esc(cat.why)}</div>
       <h3 style="margin-top:6px">Quem pode agir</h3><div class="list">${responsaveis(cat,S.cidade).map(x=>personRow(x.p,x.papel)).join("")}</div>
-      <p class="muted" style="font-size:.82rem"><span class="pill demo">Demonstração</span> Nomes e partidos são fictícios neste protótipo.</p>
+      <p class="muted" style="font-size:.82rem">${Dados.disp?"Eleitos: TSE, Câmara e Senado. Secretários: informados e conferidos por moradores.":'<span class="pill demo">Demonstração</span> Nomes e partidos são fictícios neste modo.'}</p>
     </div>`:`<div class="card flat"><p>Não deu para identificar o tipo automaticamente. Escolha abaixo.</p></div>`}
     ${S.sample?`<button class="btn" id="aiCat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>Pedir ao Claude para analisar o relato</button><p class="muted" id="aiMsg" role="status" style="font-size:.86rem"></p>`:""}
     <details class="acc" ${cat?"":"open"}><summary>Escolher outro tipo de problema</summary><div class="body"><div class="cat-grid">${CATS.map(c=>`<button data-cat="${c.k}" aria-pressed="${c.k===d.cat}"><span class="esf ${c.e}" data-l="${ESF[c.e].l}">${ESF[c.e].n}</span>${esc(c.n)}</button>`).join("")}</div></div></details>
     <div class="row"><button class="btn" id="bk">Voltar</button><button class="btn primary grow" id="nx" ${cat?"":"disabled"}>Preparar cobrança</button></div>`;
   }
-  const cat=CAT[d.cat]; const ch=CHANNEL[cat.e]; const dirKey=`${S.cidade.uf||S.cidade.pais}_${norm(S.cidade.nome).replace(/\W+/g,"-")}_${cat.k}`; const dir=S.diretorio[dirKey];
-  if(!d.para&&dir)d.para=dir.email;
+  const cat=CAT[d.cat]; const ch=CHANNEL[cat.e]; const ve=valorDe(alvoEmail(cat)); const sug=ve.ver?ve.ver.c.valor:"";
+  if(!d.para&&sug)d.para=sug; if(d.compartilhar===undefined)d.compartilhar=true;
+  const novoEmail=d.para&&emailOk(d.para)&&d.para.toLowerCase()!==sug&&!ve.todos.some(x=>x.c.valor===d.para.toLowerCase());
   const corpo=corpoEmail(d,d.modelo,d.ident); const assunto=MODELOS[d.modelo].assunto(d);
   return head+`<h1>Enviar cobrança</h1>
     <div class="stack"><span class="eyebrow">Tipo de mensagem</span><div class="seg" role="group">${Object.entries(MODELOS).map(([k,m])=>`<button data-mod="${k}" aria-pressed="${d.modelo===k}">${m.n}</button>`).join("")}</div></div>
     <div class="stack"><span class="eyebrow">Identificação</span><div class="seg" role="group">${[["completo","Completa"],["nome","Só nome"],["anonimo","Anônimo"]].map(([k,n])=>`<button data-id="${k}" aria-pressed="${d.ident===k}">${n}</button>`).join("")}</div>
     <p class="muted" style="font-size:.85rem">${d.ident==="completo"?"Inclui nome, CPF, cidade de votação e contato. Pedidos identificados têm mais chance de resposta e você recebe o retorno.":d.ident==="nome"?"Inclui só seu nome e e-mail.":"Sem dados pessoais. Para anonimato real, envie de um e-mail que não leve seu nome. Pedidos pela Lei de Acesso à Informação exigem identificação."}${d.ident==="completo"&&!S.perfil.cpf?' <a href="#perfil">Complete CPF e cidade de votação no perfil.</a>':""}</p></div>
-    <label class="f">Para <small>${esc(ch.nome)}. ${esc(ch.nota)} ${dir?"Endereço indicado por outra pessoa do app; confira no site oficial.":"Cole o e-mail oficial do órgão; ele fica salvo para os próximos moradores de "+esc(S.cidade.nome)+"."}</small><input type="email" id="para" value="${esc(d.para)}" placeholder="ouvidoria@…gov.br"></label>
-    ${ch.url?`<a class="btn small" href="${ch.url}" target="_blank" rel="noopener" style="align-self:flex-start">Abrir o Fala.BR</a>`:""}
+    <label class="f">Para <small>${esc(ch.nome)}. ${esc(ch.nota)} ${ve.ver?`Endereço conferido por ${ve.ver.a.nconf} ${ve.ver.a.nconf===1?"pessoa":"pessoas"}${emailOficial(sug)?"":", fora de domínio oficial"}.`:ve.pend.length?`Há ${ve.pend.length} ${ve.pend.length>1?"sugestões":"sugestão"} aguardando conferência: ${ve.pend.slice(0,2).map(x=>esc(x.c.valor)).join(", ")}. Confira no site oficial antes de usar.`:"Ninguém informou ainda o e-mail deste órgão em "+esc(S.cidade.nome)+". Cole o endereço do site oficial."}</small><input type="email" id="para" value="${esc(d.para)}" placeholder="ouvidoria@…gov.br"></label>
+    ${novoEmail?`<label class="row" style="gap:10px;font-size:.9rem"><input type="checkbox" id="shareMail" ${d.compartilhar?"checked":""} style="width:20px;height:20px"> Sugerir este e-mail para outros moradores <span class="muted">(passa por conferência)</span></label>`:""}
+    <div class="row">${ch.url?`<a class="btn small" href="${ch.url}" target="_blank" rel="noopener">Abrir o Fala.BR</a>`:""}<button class="btn small ghost" id="mailHist" type="button">E-mails sugeridos e conferências</button></div>
     <div class="mail"><dl class="mh"><dt>Para</dt><dd>${esc(d.para||"—")}</dd><dt>Assunto</dt><dd id="mAss">${esc(assunto)}</dd></dl><pre id="mBody">${esc(corpo)}</pre></div>
     <div class="row"><button class="btn" id="cpy">Copiar texto</button><a class="btn" id="mailto" href="mailto:${encodeURIComponent(d.para)}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo.slice(0,1800))}">Abrir no app de e-mail</a></div>
     <label class="row" style="gap:10px;font-weight:600"><input type="checkbox" id="pub" ${d.publico?"checked":""} style="width:20px;height:20px"> Mostrar no mural de ${esc(S.cidade.nome)} <span class="muted" style="font-weight:400;font-size:.85rem">(sem seu nome)</span></label>
     <div class="row"><button class="btn" id="bk">Voltar</button><button class="btn primary grow" id="fin">Registrar como enviada</button></div>
     <p class="muted" style="font-size:.84rem">Envie pelo seu e-mail ou pelo canal oficial e depois toque em “Registrar como enviada”. A contagem do prazo começa aí.</p>`;
-}
-function personRow(p,papel){
-  const ini=p.nome.split(" ").map(x=>x[0]).slice(0,2).join("");
-  return `<button class="item-btn person" data-pid="${p.id}"><span class="avatar" style="background:${p.cor}">${esc(ini)}</span><span class="grow"><b>${esc(p.nome)}</b> <span class="muted mono">${esc(p.partido.s)}</span><br><span class="muted" style="font-size:.86rem">${esc(p.cargo)}${papel?" · "+esc(papel):""}</span></span></button>`;
 }
 const PEOPLE={};
 function registerPeople(list){for(const p of list)PEOPLE[p.id]=p}
@@ -865,8 +865,10 @@ function bindRelatar(){
   if(d.passo===4){
     document.querySelectorAll("[data-mod]").forEach(b=>b.onclick=()=>{d.modelo=b.dataset.mod;if(d.modelo==="lai"&&d.ident==="anonimo")d.ident="nome";render()});
     document.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{d.ident=b.dataset.id;if(d.ident==="anonimo"&&d.modelo==="lai"){d.modelo="reclamacao";toast("Pedido pela LAI exige identificação; mudei para Reclamação")}render()});
-    $("#para").onchange=e=>{d.para=e.target.value.trim();render()};
+    $("#para").oninput=e=>{d.para=e.target.value.trim()};$("#para").onchange=()=>render();
     $("#pub").onchange=e=>{d.publico=e.target.checked};
+    const sm=$("#shareMail");if(sm)sm.onchange=e=>{d.compartilhar=e.target.checked};
+    $("#mailHist").onclick=()=>{const cat=CAT[d.cat];openAlvo(alvoEmail(cat),`E-mail: ${cat.org} — ${S.cidade.nome}`,"email")};
     $("#cpy").onclick=()=>copyText(`Assunto: ${$("#mAss").textContent}\n\n${$("#mBody").textContent}`,$("#mBody"));
     $("#fin").onclick=async()=>{
       const cat=CAT[d.cat]; const r={id:d.id,titulo:d.titulo,texto:d.texto,local:d.local,bairro:d.bairro||"",rua:d.rua||"",cat:d.cat,modelo:d.modelo,ident:d.ident,para:d.para,
@@ -874,7 +876,9 @@ function bindRelatar(){
         cidade:S.cidade.nome,uf:S.cidade.uf||"",pais:S.cidade.pais||"Brasil",criado:Date.now(),enviadoEm:Date.now(),respostas:[],status:"enviada",
         assunto:MODELOS[d.modelo].assunto(d),corpo:corpoEmail(d,d.modelo,d.ident)};
       await Store.saveRec(r);
-      if(d.para&&/@/.test(d.para)){const dirKey=`${S.cidade.uf||S.cidade.pais}_${norm(S.cidade.nome).replace(/\W+/g,"-")}_${cat.k}`;if(!S.diretorio[dirKey]||S.diretorio[dirKey].email!==d.para)await Store.putDir(dirKey,{email:d.para,cat:cat.k,cidade:S.cidade.nome,em:Date.now()})}
+      const ve=valorDe(alvoEmail(cat)); const em=(d.para||"").toLowerCase();
+      if(d.compartilhar!==false&&emailOk(em)&&!ve.todos.some(x=>x.c.valor===em)){const meusHoje=S.contribs.filter(x=>autorDe(x)===S.uid&&Date.now()-x.criado<864e5).length;
+        if(meusHoje<LIMITE_DIA)await Store.put("contrib","contribs","c_"+Date.now().toString(36)+uidLocal(),{alvo:alvoEmail(cat),campo:"email",valor:em,fonte:"",obs:"Usado numa cobrança",rotulo:`E-mail: ${cat.org} — ${S.cidade.nome}`,cidade:S.cidade.nome,uf:S.cidade.uf||"",autor:S.uid,criado:Date.now()})}
       if(d.publico){const f=r.midia.find(m=>m.tipo==="foto");let foto="";if(f){foto=f.url.startsWith("data:")?await thumb(f.url):f.url}
         await Store.put("mural","mural","m_"+r.id,{titulo:r.titulo,resumo:r.texto.slice(0,220),local:r.local,bairro:r.bairro,rua:r.rua,cat:r.cat,cidade:r.cidade,uf:r.uf,pais:r.pais,foto,criado:r.criado,status:"aberto"})}
       S.draft=null; toast("Cobrança registrada: "+protocolo(r)); location.hash="perfil";
@@ -916,9 +920,10 @@ function openRec(id){
 }
 function openEscalar(r){
   const cat=CAT[r.cat]; const resp=responsaveis(cat,S.cidade); registerPeople(resp.map(x=>x.p));
-  const fisc=resp.find(x=>/Fiscaliza/.test(x.papel))?.p||resp[0].p;
+  const fisc=resp.find(x=>x.p.grupo)?.p||resp.find(x=>/Fiscaliza/.test(x.papel))?.p||resp[0].p;
   if(!Prog.d.escalou[r.id]){Prog.d.escalou[r.id]=Date.now();Prog.save()}
-  const txt=`${fisc.cargo.startsWith("Vereador")?"Exmo(a). Sr(a). Vereador(a)":"Exmo(a). Sr(a)."} ${fisc.nome},\n\nEm ${fmtDate(r.enviadoEm)} enviei à ${cat.org} a manifestação de protocolo ${protocolo(r)}, sobre: ${r.titulo}.\n\nO prazo legal de resposta (Lei 13.460/2017) terminou sem retorno. Peço que, no exercício da função fiscalizadora, encaminhe requerimento de informação ao órgão e acompanhe o caso.\n\nDescrição: ${r.texto}\n${r.local?"Local: "+r.local+"\n":""}\nAtenciosamente,\n${S.perfil.nome}${S.perfil.cidadeVoto?"\nEleitor(a) em "+S.perfil.cidadeVoto:""}`;
+  const sauda=fisc.grupo?`Exmos(as). Srs(as). integrantes da ${fisc.nome}`:`${fisc.cargo.startsWith("Vereador")?"Exmo(a). Sr(a). Vereador(a)":"Exmo(a). Sr(a)."} ${fisc.nome}`;
+  const txt=`${sauda},\n\nEm ${fmtDate(r.enviadoEm)} enviei à ${cat.org} a manifestação de protocolo ${protocolo(r)}, sobre: ${r.titulo}.\n\nO prazo legal de resposta (Lei 13.460/2017) terminou sem retorno. Peço que, no exercício da função fiscalizadora, encaminhe requerimento de informação ao órgão e acompanhe o caso.\n\nDescrição: ${r.texto}\n${r.local?"Local: "+r.local+"\n":""}\nAtenciosamente,\n${S.perfil.nome}${S.perfil.cidadeVoto?"\nEleitor(a) em "+S.perfil.cidadeVoto:""}`;
   openSheet("Escalar cobrança",`
     <p>Quando o órgão não responde no prazo, há caminhos que costumam funcionar:</p>
     <ol class="flow"><li><div><b>Parlamentar que fiscaliza a área</b><br><span class="muted">Vereadores e deputados podem exigir informações oficialmente do Executivo.</span></div></li>
@@ -927,16 +932,15 @@ function openEscalar(r){
     <li><div><b>Tribunal de Contas</b><br><span class="muted">Se houver suspeita de mau uso de dinheiro público ou obra paga e não entregue.</span></div></li></ol>
     <h3>Mensagem pronta para ${esc(fisc.nome)}</h3>
     <div class="mail"><pre id="escTxt">${esc(txt)}</pre></div>
-    <div class="row"><button class="btn primary" id="escCopy">Copiar mensagem</button><button class="btn" data-pid="${fisc.id}">Ver ficha do parlamentar</button></div>
-    <p class="muted" style="font-size:.82rem"><span class="pill demo">Demonstração</span> Parlamentar fictício. Na versão final, o contato vem das bases oficiais da Câmara e do Senado.</p>`,el=>{
+    <div class="row"><button class="btn primary" id="escCopy">Copiar mensagem</button><button class="btn" data-pid="${fisc.id}">${fisc.grupo?"Ver a lista e escolher a quem enviar":"Ver ficha do parlamentar"}</button></div>
+    ${Dados.disp?"":`<p class="muted" style="font-size:.82rem"><span class="pill demo">Demonstração</span> Parlamentar fictício neste modo.</p>`}`,el=>{
       $("#escCopy",el).onclick=()=>copyText(txt,$("#escTxt",el)); bindPeople(el);
     });
 }
 
-/* ---------- POLÍTICA ---------- */
-let polEsf="municipal";
-function viewPolitica(){
-  const o=officials(S.cidade); registerPeople([...o.municipal,...o.estadual,...o.federal]);
+/* ---------- política: modo demonstração (sem dados oficiais) ---------- */
+function viewPoliticaDemo(){
+  const o=officialsDemo(S.cidade); registerPeople([...o.municipal,...o.estadual,...o.federal]);
   const intl=S.cidade.pais&&S.cidade.pais!=="Brasil";
   const tabs=intl?[["municipal","Local"],["estadual","Regional"],["federal","Nacional"]]:[["municipal","Município"],["estadual","Estado"],["federal","União"]];
   const lst=o[polEsf];
@@ -957,8 +961,7 @@ function viewPolitica(){
       <li>Diários oficiais e portais das Câmaras Municipais e Assembleias: decretos, secretários e projetos locais.</li>
     </ul></section>`;
 }
-function bindPolitica(){document.querySelectorAll("[data-esf]").forEach(b=>b.onclick=()=>{polEsf=b.dataset.esf;render()});bindPeople()}
-function openPerson(p){
+function openPersonDemo(p){
   if(!p)return; const leg=p.votos.length>0; const exe=p.acoes.length>0;
   const msg=`${p.cargo.split(" ")[0]==="Vereador(a)"?"Exmo(a). Sr(a). Vereador(a)":"Exmo(a). Sr(a)."} ${p.nome},\n\nSou ${S.perfil.cidadeVoto?"eleitor(a) em "+S.perfil.cidadeVoto:"morador(a) de "+cidadeNome()} e escrevo para pedir sua atenção ao seguinte problema:\n\n[descreva o problema e o que espera do seu mandato]\n\nAtenciosamente,\n${S.perfil.nome}`;
   openSheet(p.nome,`
@@ -970,6 +973,296 @@ function openPerson(p){
     ${exe?`<h3>Ações executivas</h3><div class="list">${p.acoes.map(a=>`<div class="row"><span class="grow">${esc(a.t)}</span><span class="muted mono">${a.d}</span></div>`).join("")}</div>`:""}
     <h3>Escrever para ${esc(p.nome.split(" ")[0])}</h3><div class="mail"><pre id="pMsg">${esc(msg)}</pre></div>
     <div class="row"><button class="btn primary" id="pCopy">Copiar mensagem</button></div>`,el=>{$("#pCopy",el).onclick=()=>copyText(msg,$("#pMsg",el))});
+}
+
+/* ---------- DADOS OFICIAIS (gerados semanalmente a partir de TSE, Câmara e Senado) ---------- */
+const Dados={meta:null,estados:null,deputados:null,senadores:null,partidos:{},curadores:[],mun:{},disp:false,
+  async init(){
+    if(!window.__SITE__)return;
+    try{
+      const r=await fetch("data/meta.json",{cache:"no-cache"}); if(!r.ok)return; this.meta=await r.json(); this.disp=true;
+      const get=n=>fetch(`data/${n}.json`).then(r=>r.ok?r.json():null).catch(()=>null);
+      const [e,d,s,p,c]=await Promise.all([get("estados"),get("deputados"),get("senadores"),get("partidos"),get("curadores")]);
+      this.estados=e;this.deputados=d;this.senadores=s;this.partidos=p||{};this.curadores=(Array.isArray(c)?c:[]).map(k=>{try{return /^npub1/.test(k)&&window.NostrTools?window.NostrTools.nip19.decode(k).data:k}catch(x){return k}});
+      if(S.cidade)this.loadMun(S.cidade.uf); scheduleRender();
+    }catch(e){}
+  },
+  async loadMun(uf){
+    if(!this.disp||!uf||this.mun[uf]!==undefined)return; this.mun[uf]=null;
+    try{const r=await fetch(`data/municipios/${uf}.json`);this.mun[uf]=r.ok?await r.json():false}catch(e){this.mun[uf]=false}
+    scheduleRender();
+  },
+  cidade(c){const m=this.mun[c.uf];if(!m)return m;return m[regKey(c.nome)]||false}
+};
+const POSSE={presidente:"2027-01-05",governador:"2027-01-06",legislativo:"2027-02-01"};
+const hoje=()=>new Date().toISOString().slice(0,10);
+const CORES=["#0A6B4B","#2457A6","#9A4214","#6B4FA0","#1F7A8C","#8C2F4B"];
+const corDe=s=>CORES[hash(s)%CORES.length];
+function partidoObj(sg){return {s:sg||"s/ partido",n:(Dados.partidos||{})[sg]||sg||"Sem partido"}}
+function pReal(o,cargo,esfera,fonte,extra={}){if(!o)return null;const nome=o.u||o.n;const id="r"+hash(cargo+"|"+nome);return {id,nome,nomeCompleto:o.n,partido:partidoObj(o.p),cargo,esfera,real:true,fonte,cor:corDe(id),pls:[],votos:[],acoes:[],...extra}}
+function grupo(chaveG,titulo,cargo,lista,esfera,fonte){return {id:"g"+hash(chaveG),grupo:true,nome:titulo,cargo,lista:lista.filter(Boolean),esfera,fonte,partido:{s:"",n:""},pls:[],votos:[],acoes:[]}}
+const uniq=a=>[...new Set(a)];
+const PASTAS_MUN=uniq([...CATS.filter(c=>c.e==="municipal").map(c=>c.pasta),"Assistência Social","Fazenda","Cultura"]);
+const PASTAS_EST=uniq([...CATS.filter(c=>c.e==="estadual").map(c=>c.pasta),"Fazenda","Meio Ambiente","Desenvolvimento Social"]);
+const MINISTERIOS=uniq(CATS.map(c=>c.min));
+const slugC=c=>`${c.uf||"XX"}:${regKey(c.nome).replace(/ /g,"-")}`;
+function alvoEmail(cat){return `email|${slugC(S.cidade)}|${cat.k}`}
+function alvoSec(nivel,c,pasta){return nivel==="mun"?`sec-mun|${slugC(c)}|${pasta}`:nivel==="est"?`sec-est|${c.uf}|${pasta}`:`ministro|${pasta}`}
+function cargoSec(nivel,c,pasta){return nivel==="mun"?`Secretário(a) municipal — ${pasta}`:nivel==="est"?`Secretário(a) estadual — ${pasta}`:pasta.replace(/^Ministério/,"Ministro(a)")}
+function secretarioPessoa(nivel,c,pasta){
+  const alvo=alvoSec(nivel,c,pasta); const v=valorDe(alvo); const cargo=cargoSec(nivel,c,pasta); const esfera=nivel==="mun"?"municipal":nivel==="est"?"estadual":"federal";
+  if(v.ver){const val=v.ver.c.valor||{};const id="s"+hash(alvo+val.nome);return {id,nome:val.nome||"—",partido:partidoObj(val.partido),cargo,esfera,crowd:{alvo,conf:v.ver.a.conf,div:v.divergencia,fonte:v.ver.c.fonte},cor:corDe(id),pls:[],votos:[],acoes:[]}}
+  return {id:"x"+hash(alvo),placeholder:true,alvo,campo:"titular",nome:"Não informado",cargo,esfera,pend:v.pend.length,partido:{s:"",n:""},pls:[],votos:[],acoes:[]};
+}
+function oficiais(c){
+  const o={municipal:{exec:[],leg:[]},estadual:{exec:[],leg:[],eleitos:[]},federal:{exec:[],leg:[],eleitos:[]},carregando:false,faltaMun:false};
+  const m=Dados.cidade(c);
+  if(m===null||m===undefined){o.carregando=true;Dados.loadMun(c.uf)}
+  if(m){
+    const f="TSE · eleições municipais de 2024";
+    if(m.prefeito)o.municipal.exec.push(pReal(m.prefeito,"Prefeito(a) de "+c.nome,"municipal",f+(m.prefeito.sup?" (eleição suplementar)":"")));
+    if(m.vice)o.municipal.exec.push(pReal(m.vice,"Vice-prefeito(a)","municipal",f));
+    o.municipal.leg.push(grupo(c.nome+"|ver","Câmara Municipal de "+c.nome,`${m.vereadores.length} vereadores eleitos em 2024`,m.vereadores.map(v=>pReal(v,"Vereador(a) — "+c.nome,"municipal",f)),"municipal",f));
+  } else if(m===false)o.faltaMun=true;
+  for(const pa of PASTAS_MUN)o.municipal.exec.push(secretarioPessoa("mun",c,pa));
+  const e=Dados.estados&&Dados.estados[c.uf]; const br=Dados.estados&&Dados.estados.BR;
+  const fase=(k,x)=>x&&x.eleitos2026&&hoje()>=POSSE[k]?{d:x.eleitos2026,f:"TSE · eleições de 2026"}:{d:x&&x.atual,f:"TSE · eleições de 2022"};
+  const g=fase("governador",e);
+  if(g.d){if(g.d.governador)o.estadual.exec.push(pReal(g.d.governador,"Governador(a) — "+(UFS[c.uf]||c.uf),"estadual",g.f));if(g.d.vice)o.estadual.exec.push(pReal(g.d.vice,"Vice-governador(a)","estadual",g.f))}
+  for(const pa of PASTAS_EST)o.estadual.exec.push(secretarioPessoa("est",c,pa));
+  const le=fase("legislativo",e);
+  if(le.d&&le.d.deputados_estaduais&&le.d.deputados_estaduais.length)o.estadual.leg.push(grupo(c.uf+"|de",c.uf==="DF"?"Câmara Legislativa do DF":"Assembleia Legislativa — "+(UFS[c.uf]||c.uf),`${le.d.deputados_estaduais.length} deputados eleitos`,le.d.deputados_estaduais.map(d=>pReal(d,(c.uf==="DF"?"Deputado(a) distrital":"Deputado(a) estadual")+" — "+c.uf,"estadual",le.f)),"estadual",le.f));
+  if(e&&e.eleitos2026&&hoje()<POSSE.governador){const x=e.eleitos2026;[["governador","Governador(a) eleito(a) em 2026"],["vice","Vice-governador(a) eleito(a) em 2026"]].forEach(([k,n])=>{if(x[k])o.estadual.eleitos.push(pReal(x[k],n,"estadual","TSE · eleições de 2026"))})}
+  const p=fase("presidente",br);
+  if(p.d){if(p.d.presidente)o.federal.exec.push(pReal(p.d.presidente,"Presidente da República","federal",p.f));if(p.d.vice)o.federal.exec.push(pReal(p.d.vice,"Vice-presidente da República","federal",p.f))}
+  if(br&&br.eleitos2026&&hoje()<POSSE.presidente&&br.eleitos2026.presidente)o.federal.eleitos.push(pReal(br.eleitos2026.presidente,"Presidente eleito(a) em 2026","federal","TSE · eleições de 2026"));
+  for(const mi of MINISTERIOS)o.federal.exec.push(secretarioPessoa("min",c,mi));
+  const deps=(Dados.deputados||[]).filter(d=>d.uf===c.uf);
+  if(deps.length)o.federal.leg.push(grupo(c.uf+"|df","Deputados federais — "+(UFS[c.uf]||c.uf),`${deps.length} em exercício`,deps.map(d=>pReal({n:d.n,p:d.p},"Deputado(a) federal — "+c.uf,"federal","Câmara dos Deputados · dados abertos",{dep:d,email:d.email,url:`https://www.camara.leg.br/deputados/${d.id}`})),"federal","Câmara dos Deputados"));
+  const sens=(Dados.senadores||[]).filter(s=>s.uf===c.uf);
+  if(sens.length)o.federal.leg.push(grupo(c.uf+"|sen","Senadores — "+(UFS[c.uf]||c.uf),`${sens.length} em exercício`,sens.map(s=>pReal({n:s.n,p:s.p},"Senador(a) — "+c.uf,"federal","Senado Federal · dados abertos",{email:s.email,url:s.url})),"federal","Senado Federal"));
+  const all=[];for(const k of ["municipal","estadual","federal"])for(const x of [...o[k].exec,...o[k].leg,...(o[k].eleitos||[])]){all.push(x);if(x.grupo)all.push(...x.lista)}
+  registerPeople(all);
+  return o;
+}
+function pastaMun(cat){return cat.pasta}
+function responsaveis(cat,city){
+  if(!Dados.disp||(city.pais&&city.pais!=="Brasil"))return responsaveisDemo(cat,city);
+  const o=oficiais(city); const L=[];
+  if(cat.e==="municipal"){
+    const pref=o.municipal.exec.find(p=>/^Prefeito/.test(p.cargo)); if(pref)L.push({p:pref,papel:"Executa: chefia a prefeitura"});
+    L.push({p:secretarioPessoa("mun",city,cat.pasta),papel:"Executa: comanda a pasta"});
+    if(o.municipal.leg[0])L.push({p:o.municipal.leg[0],papel:"Fiscaliza e propõe leis municipais"});
+  } else if(cat.e==="estadual"){
+    const gov=o.estadual.exec.find(p=>/^Governador/.test(p.cargo)); if(gov)L.push({p:gov,papel:"Executa: chefia o governo estadual"});
+    L.push({p:secretarioPessoa("est",city,cat.pasta),papel:"Executa: comanda a pasta"});
+    if(o.estadual.leg[0])L.push({p:o.estadual.leg[0],papel:"Fiscaliza: deputados estaduais"});
+  } else {
+    L.push({p:secretarioPessoa("min",city,cat.min),papel:"Executa: comanda o ministério"});
+    const pr=o.federal.exec.find(p=>/^Presidente/.test(p.cargo)); if(pr)L.push({p:pr,papel:"Chefia o governo federal"});
+    for(const g of o.federal.leg)L.push({p:g,papel:"Fiscaliza em nome do seu estado"});
+  }
+  registerPeople(L.map(x=>x.p));
+  return L;
+}
+
+/* ---------- CONTRIBUIÇÕES COM VERIFICAÇÃO ---------- */
+const OFICIAIS=["gov.br","leg.br","jus.br","mp.br","def.br","mil.br"];
+const DIARIOS=["diariomunicipal","diariooficial","imprensaoficial","doem.","dom.","doe."];
+function hostOf(u){try{const x=new URL(u);return /^https?:$/.test(x.protocol)?x.hostname.toLowerCase():""}catch(e){return ""}}
+const ehOficial=h=>OFICIAIS.some(s=>h===s||h.endsWith("."+s));
+function fonteTipo(u){const h=hostOf(u);if(!h)return "nenhuma";if(ehOficial(h))return "oficial";if(DIARIOS.some(d=>h.includes(d)))return "diario";return "outra"}
+const FONTE_TXT={oficial:"Fonte oficial",diario:"Diário oficial",outra:"Fonte não oficial",nenhuma:"Sem fonte"};
+const emailOk=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e||"");
+const emailOficial=e=>ehOficial(((e||"").split("@")[1]||"").toLowerCase());
+const isCurador=pk=>Dados.curadores.includes(pk);
+const LIMITE_DIA=10, IDADE_MIN_DIAS=3;
+function idadeDias(pk){const t=Nostr.primeiro&&Nostr.primeiro[pk];if(!Nostr.ready)return 99;if(!t)return 0;return (Date.now()/1000-t)/86400}
+function pesoVoto(pk){if(isCurador(pk))return 3;return idadeDias(pk)<IDADE_MIN_DIAS?0:1}
+function autorDe(c){return c._autor||c.autor}
+function avaliar(c){
+  const autor=autorDe(c);
+  if(c.campo==="email"&&!emailOk(c.valor))return {st:"recusado",motivo:"E-mail em formato inválido.",conf:0,cont:0,precisa:0};
+  const doDia=S.contribs.filter(x=>autorDe(x)===autor&&x.criado<=c.criado&&c.criado-x.criado<864e5).length;
+  if(doDia>LIMITE_DIA)return {st:"recusado",motivo:"A mesma chave passou do limite de contribuições por dia.",conf:0,cont:0,precisa:0};
+  const ft=fonteTipo(c.fonte); let precisa=ft==="oficial"||ft==="diario"?3:5;
+  if(c.campo==="email"&&!emailOficial(c.valor))precisa=Math.max(precisa,5);
+  let conf=0,cont=0,curOk=false,curNo=false,nconf=0,ncont=0;
+  for(const v of S.cvotos){if(v.c!==c.id||v.uid===autor)continue;const w=pesoVoto(v.uid);
+    if(v.v>0){conf+=w;nconf++;if(isCurador(v.uid))curOk=true}else{cont+=w;ncont++;if(isCurador(v.uid))curNo=true}}
+  if(isCurador(autor)&&!curNo)curOk=true;
+  const base={conf,cont,precisa,ft,nconf,ncont};
+  if(curNo)return {...base,st:"removido",motivo:"Retirado pela curadoria."};
+  if(cont>=2&&cont>=conf)return {...base,st:"contestado"};
+  if(curOk||conf>=precisa)return {...base,st:"verificado"};
+  return {...base,st:"pendente"};
+}
+function valorDe(alvo){
+  const cs=S.contribs.filter(c=>c.alvo===alvo).map(c=>({c,a:avaliar(c)}));
+  const ver=cs.filter(x=>x.a.st==="verificado").sort((x,y)=>y.a.conf-x.a.conf||y.c.criado-x.c.criado);
+  const pend=cs.filter(x=>x.a.st==="pendente").sort((x,y)=>y.c.criado-x.c.criado);
+  const div=new Set(ver.map(x=>JSON.stringify(x.c.valor))).size>1;
+  return {ver:ver[0]||null,divergencia:div,pend,todos:cs};
+}
+const ST_TXT={verificado:"Verificado",pendente:"Aguardando conferência",contestado:"Contestado",removido:"Removido pela curadoria",recusado:"Recusado"};
+const ST_CLS={verificado:"s-resolvida",pendente:"s-enviada",contestado:"s-vencida",removido:"s-rascunho",recusado:"s-rascunho"};
+function stPill(a){return `<span class="pill ${ST_CLS[a.st]}"><i></i>${ST_TXT[a.st]}${a.st==="pendente"?` · ${Math.floor(a.conf)}/${a.precisa}`:""}</span>`}
+function valorTxt(c){return c.campo==="email"?c.valor:c.campo==="aviso"?(c.valor&&c.valor.texto)||"":`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.partido?" ("+c.valor.partido+")":""}`}
+function curto(pk){return pk?pk.slice(0,8)+"…":"?"}
+const REGRAS_HTML=`<details class="acc"><summary>Como evitamos erros e fraudes</summary><div class="body" style="font-size:.92rem">
+  <p><b>Dado oficial vem primeiro.</b> Eleitos, partidos e mandatos vêm do TSE, da Câmara e do Senado e não podem ser editados. Moradores só podem anexar um alerta, com fonte, se alguém deixou o cargo.</p>
+  <p><b>Toda contribuição precisa de fonte.</b> Link de site oficial (.gov.br, .leg.br, .jus.br, .mp.br) ou de diário oficial exige 3 conferências. Qualquer outra fonte, ou nenhuma, exige 5. E-mail fora de domínio oficial também exige 5.</p>
+  <p><b>Conferência independente.</b> Quem contribui não confere o próprio dado. Cada chave confere uma vez. Chaves com menos de ${IDADE_MIN_DIAS} dias na rede podem contribuir, mas suas conferências não contam.</p>
+  <p><b>Contestação.</b> Duas contestações fundamentadas que superem as confirmações tiram o dado de uso até nova conferência.</p>
+  <p><b>Divergência.</b> Se dois valores diferentes forem verificados, o app mostra o mais conferido e avisa que há divergência.</p>
+  <p><b>Limites e curadoria.</b> Cada chave faz até ${LIMITE_DIA} contribuições por dia. Curadores identificados podem confirmar ou retirar dados, sempre de forma registrada.</p>
+  <p><b>Histórico aberto.</b> Toda contribuição fica visível com a fonte, a chave de quem enviou e cada conferência.</p></div></details>`;
+function openContrib(op){
+  const tipo=op.campo;
+  const campos=tipo==="email"?`<label class="f">E-mail oficial do órgão<input type="email" id="ctVal" value="${esc(op.valor||"")}" placeholder="ouvidoria@prefeitura.gov.br"></label>`
+    :tipo==="aviso"?`<label class="f">O que mudou?<textarea id="ctVal" style="min-height:80px" placeholder="Ex.: renunciou em 03/2026; assumiu o vice."></textarea></label>`
+    :`<label class="f">Nome de quem ocupa o cargo hoje<input type="text" id="ctVal"></label><label class="f">Partido (sigla, se houver)<input type="text" id="ctPart" maxlength="12"></label>`;
+  openSheet(op.rotulo,`
+    <p class="muted">${esc(op.ajuda||"Informe o dado e o link onde ele pode ser conferido. Outras pessoas vão conferir antes de ele valer para todos.")}</p>
+    <form id="fCt" class="stack">${campos}
+      <label class="f">Link da fonte <small>Página oficial, diário oficial ou portal da transparência onde isso aparece.</small><input type="text" inputmode="url" id="ctFonte" placeholder="https://…gov.br/…"></label>
+      <p class="muted" id="ctTipo" style="font-size:.85rem"></p>
+      <label class="f">Observação (opcional)<input type="text" id="ctObs" maxlength="200"></label>
+      <p class="muted" id="ctErr" role="alert" hidden></p>
+      <button class="btn primary" type="submit">Enviar para conferência</button>
+    </form>${REGRAS_HTML}`,el=>{
+      const fonteIn=$("#ctFonte",el),tipoEl=$("#ctTipo",el);
+      const upd=()=>{const t=fonteTipo(fonteIn.value.trim());tipoEl.textContent=t==="nenhuma"?(fonteIn.value?"Link inválido.":"Sem fonte, o dado precisará de 5 conferências."):`${FONTE_TXT[t]}: precisa de ${t==="oficial"||t==="diario"?3:5} conferências.`};
+      fonteIn.oninput=upd; upd();
+      $("#fCt",el).onsubmit=async e=>{e.preventDefault();const er=$("#ctErr",el);const show=m=>{er.hidden=false;er.textContent=m};
+        const raw=$("#ctVal",el).value.trim(); const fonte=fonteIn.value.trim();
+        if(fonte&&!hostOf(fonte))return show("O link precisa começar com https://.");
+        let valor;
+        if(tipo==="email"){if(!emailOk(raw))return show("Escreva um e-mail completo, como ouvidoria@cidade.mg.gov.br.");valor=raw.toLowerCase()}
+        else if(tipo==="aviso"){if(raw.length<10)return show("Descreva a mudança em pelo menos uma frase.");if(!fonte)return show("Alertas sobre dados oficiais precisam de link da fonte.");valor={texto:raw}}
+        else{if(raw.split(" ").length<2)return show("Escreva nome e sobrenome.");valor={nome:raw,partido:$("#ctPart",el).value.trim().toUpperCase()}}
+        const meusHoje=S.contribs.filter(x=>autorDe(x)===S.uid&&Date.now()-x.criado<864e5).length;
+        if(meusHoje>=LIMITE_DIA)return show(`Você já fez ${LIMITE_DIA} contribuições hoje. Volte amanhã.`);
+        const id="c_"+Date.now().toString(36)+uidLocal();
+        await Store.put("contrib","contribs",id,{alvo:op.alvo,campo:tipo,valor,fonte,obs:$("#ctObs",el).value.trim(),rotulo:op.rotulo,cidade:S.cidade.nome,uf:S.cidade.uf||"",autor:S.uid,criado:Date.now()});
+        closeSheet();toast("Enviado. Agora outras pessoas vão conferir.");render()};
+    });
+}
+function openAlvo(alvo,rotulo,campo){
+  const v=valorDe(alvo);
+  openSheet(rotulo,`${v.divergencia?`<div class="notice"><b>Divergência</b><span>Há mais de um valor verificado. O app usa o mais conferido até a curadoria resolver.</span></div>`:""}
+    ${v.todos.length?`<div class="list">${v.todos.sort((x,y)=>y.c.criado-x.c.criado).map(x=>contribRow(x.c,x.a)).join("")}</div>`:`<p class="muted">Ninguém informou ainda.</p>`}
+    <button class="btn primary" id="alNovo">${v.todos.length?"Sugerir outro valor":"Informar"}</button>${REGRAS_HTML}`,el=>{
+      bindContribRows(el); $("#alNovo",el).onclick=()=>{closeSheet();openContrib({alvo,campo,rotulo})};
+    });
+}
+function contribRow(c,a){return `<button class="item-btn" data-ct="${esc(c.id)}"><span class="grow stack" style="gap:4px"><b>${esc(valorTxt(c))}</b><span class="row" style="gap:6px">${stPill(a)}<span class="muted" style="font-size:.8rem">${FONTE_TXT[a.ft||fonteTipo(c.fonte)]} · ${fmtDate(c.criado)}</span></span>${c.rotulo?`<span class="muted" style="font-size:.82rem">${esc(c.rotulo)}</span>`:""}</span></button>`}
+function bindContribRows(root){root.querySelectorAll("[data-ct]").forEach(b=>b.onclick=()=>openRevisar(b.dataset.ct))}
+function meuVoto(cid){return S.cvotos.find(v=>v.c===cid&&v.uid===S.uid)}
+function openRevisar(cid){
+  const c=S.contribs.find(x=>x.id===cid); if(!c)return; const a=avaliar(c); const meu=meuVoto(cid); const proprio=autorDe(c)===S.uid;
+  const votos=S.cvotos.filter(v=>v.c===cid);
+  const novo=idadeDias(S.uid)<IDADE_MIN_DIAS&&!isCurador(S.uid);
+  openSheet("Conferir informação",`
+    <span class="eyebrow">${esc(c.rotulo||"")}</span><h2>${esc(valorTxt(c))}</h2>
+    <div class="row">${stPill(a)}${a.motivo?`<span class="muted">${esc(a.motivo)}</span>`:""}</div>
+    <div class="card stack" style="gap:6px;font-size:.9rem">
+      <div><b>Fonte:</b> ${c.fonte?`<a href="${esc(c.fonte)}" target="_blank" rel="noopener noreferrer">${esc(hostOf(c.fonte)||c.fonte)}</a> <span class="muted">(${FONTE_TXT[fonteTipo(c.fonte)]})</span>`:'<span class="muted">nenhuma informada</span>'}</div>
+      ${c.obs?`<div><b>Observação:</b> ${esc(c.obs)}</div>`:""}
+      <div class="muted">Enviado por <span class="mono">${esc(curto(autorDe(c)))}</span>${isCurador(autorDe(c))?" (curadoria)":""} em ${fmtDate(c.criado)} · ${a.nconf||0} confirmações, ${a.ncont||0} contestações</div>
+    </div>
+    ${votos.filter(v=>v.v<0&&v.motivo).length?`<div class="stack" style="gap:6px"><b>Motivos das contestações</b>${votos.filter(v=>v.v<0&&v.motivo).map(v=>`<p class="muted" style="font-size:.88rem">“${esc(v.motivo)}” — <span class="mono">${esc(curto(v.uid))}</span></p>`).join("")}</div>`:""}
+    ${proprio?`<p class="muted">Você enviou esta informação, então não pode conferi-la.</p>`:`
+      <div class="why"><b>Antes de responder</b>, abra a fonte e confira se o dado está lá. Confirmar sem conferir prejudica todo mundo.</div>
+      ${novo?`<p class="muted" style="font-size:.86rem">Sua chave tem menos de ${IDADE_MIN_DIAS} dias na rede: sua conferência fica registrada, mas só passa a contar depois desse prazo.</p>`:""}
+      <div class="row"><button class="btn primary" id="rvSim" ${meu&&meu.v>0?"disabled":""}>Conferi: está certo</button><button class="btn" id="rvNao">Está errado</button>${meu?`<button class="btn ghost" id="rvDes">Desfazer minha conferência</button>`:""}</div>
+      <form id="rvMotivoF" class="stack" hidden><label class="f">O que está errado?<input type="text" id="rvMotivo" maxlength="200" placeholder="Ex.: a fonte mostra outro nome; exonerado em 10/2026"></label><button class="btn" type="submit">Enviar contestação</button><p class="muted" id="rvErr" role="alert" hidden></p></form>`}
+    ${isCurador(S.uid)&&!proprio?`<button class="btn small" id="rvCur">Retirar (curadoria)</button>`:""}`,el=>{
+      const vid=`${cid}__${S.uid}`;
+      const votar=async(v,motivo)=>{await Store.put("cvoto","cvotos",vid,{c:cid,v,motivo:motivo||"",uid:S.uid,em:Date.now()});closeSheet();toast(v>0?"Conferência registrada":"Contestação registrada");render()};
+      const s=$("#rvSim",el);if(s)s.onclick=()=>votar(1);
+      const n=$("#rvNao",el);if(n)n.onclick=()=>{$("#rvMotivoF",el).hidden=false;$("#rvMotivo",el).focus()};
+      const f=$("#rvMotivoF",el);if(f)f.onsubmit=e=>{e.preventDefault();const m=$("#rvMotivo",el).value.trim();if(m.length<8){const er=$("#rvErr",el);er.hidden=false;er.textContent="Explique em poucas palavras o que está errado.";return}votar(-1,m)};
+      const d=$("#rvDes",el);if(d)d.onclick=async()=>{await Store.del("cvoto","cvotos",vid);closeSheet();render()};
+      const cu=$("#rvCur",el);if(cu)cu.onclick=()=>votar(-1,"Retirado pela curadoria");
+    });
+}
+function filaCidade(){
+  const c=S.cidade; return S.contribs.filter(x=>(x.uf||"")===(c.uf||"")&&(x.cidade===c.nome||!/^sec-mun|^email/.test(x.alvo))).map(x=>({c:x,a:avaliar(x)})).filter(x=>x.a.st==="pendente"&&autorDe(x.c)!==S.uid&&!meuVoto(x.c.id));
+}
+function openFila(){
+  const f=filaCidade();
+  openSheet("Conferir dados",`<p class="muted">Informações enviadas por moradores que ainda precisam de conferência. Abra a fonte de cada uma antes de responder.</p>
+    ${f.length?`<div class="list">${f.map(x=>contribRow(x.c,x.a)).join("")}</div>`:`<p><b>Nada para conferir agora.</b></p>`}${REGRAS_HTML}`,el=>bindContribRows(el));
+}
+
+/* ---------- POLÍTICA (tela) ---------- */
+let polEsf="municipal";
+function viewPolitica(){
+  if(!Dados.disp||(S.cidade.pais&&S.cidade.pais!=="Brasil"))return viewPoliticaDemo();
+  const o=oficiais(S.cidade); const sec=o[polEsf];
+  const exe={municipal:"Prefeitura: executa os serviços da cidade, como ruas, coleta de lixo, postos de saúde, creches e ônibus.",estadual:"Governo do estado: polícias, ensino médio, hospitais estaduais e rodovias estaduais.",federal:"Governo federal: Presidência e ministérios, INSS, universidades federais, BRs e agências reguladoras."};
+  const leg={municipal:"Câmara Municipal: vereadores fazem as leis da cidade, aprovam o orçamento e fiscalizam a prefeitura.",estadual:"Assembleia Legislativa: deputados estaduais fazem as leis do estado e fiscalizam o governador.",federal:"Congresso Nacional: Câmara dos Deputados, que representa a população, e Senado, com 3 senadores por estado."};
+  const eleitos=sec.exec.filter(p=>!p.placeholder&&!p.crowd); const secs=sec.exec.filter(p=>p.placeholder||p.crowd);
+  const fila=filaCidade().length; const at=Dados.meta&&Dados.meta.atualizado;
+  return `<div class="stack"><span class="eyebrow">Quem governa ${esc(cidadeNome())}</span><h1>Seus representantes</h1></div>
+  <p class="muted" style="font-size:.86rem">Dados oficiais do TSE, da Câmara e do Senado${at?`, atualizados em ${fmtDate(at)}`:""}. Secretários e ministros são informados por moradores e só valem depois de conferidos.</p>
+  ${fila?`<button class="install" id="polFila" style="cursor:pointer;text-align:left;width:100%;color:var(--ink)"><span class="grow"><b>${fila} ${fila>1?"informações aguardam":"informação aguarda"} conferência</b><br><span class="muted">Ajude a manter os dados certos e ganhe XP.</span></span><span class="btn small primary">Conferir</span></button>`:""}
+  <div class="seg" role="group" aria-label="Esfera">${[["municipal","Município"],["estadual","Estado"],["federal","União"]].map(([k,n])=>`<button data-esf="${k}" aria-pressed="${polEsf===k}">${n}</button>`).join("")}</div>
+  ${o.carregando&&polEsf==="municipal"?`<p class="muted">Carregando os eleitos de ${esc(S.cidade.nome)}…</p>`:""}
+  ${o.faltaMun&&polEsf==="municipal"?`<div class="notice"><b>Sem dados</b><span>Não encontramos ${esc(S.cidade.nome)} na base do TSE. Isso acontece quando o nome do município mudou de grafia.</span></div>`:""}
+  <section class="office-group"><h3>Executivo</h3><p class="muted" style="font-size:.9rem">${exe[polEsf]}</p>${eleitos.length?`<div class="list">${eleitos.map(p=>personRow(p)).join("")}</div>`:""}</section>
+  ${sec.eleitos&&sec.eleitos.length?`<section class="office-group"><h3>Eleitos em 2026</h3><p class="muted" style="font-size:.9rem">Tomam posse em ${polEsf==="federal"?"5":"6"} de janeiro de 2027.</p><div class="list">${sec.eleitos.map(p=>personRow(p)).join("")}</div></section>`:""}
+  <section class="office-group"><h3>${polEsf==="federal"?"Ministérios":"Secretarias"}</h3><p class="muted" style="font-size:.9rem">Informados e conferidos por moradores. Toque em um cargo vazio para informar quem ocupa.</p><div class="list">${secs.map(p=>personRow(p)).join("")}</div></section>
+  <section class="office-group"><h3>Legislativo</h3><p class="muted" style="font-size:.9rem">${leg[polEsf]}</p>${sec.leg.length?`<div class="list">${sec.leg.map(p=>personRow(p)).join("")}</div>`:`<p class="muted">Dados ainda não carregados.</p>`}</section>
+  <section class="stack"><h2>Órgãos e problemas desta esfera</h2><div class="tbl-wrap"><table><thead><tr><th>Problema</th><th>Órgão</th></tr></thead><tbody>${CATS.filter(c=>c.e===polEsf).map(c=>`<tr><td>${esc(c.n)}</td><td>${esc(c.org)}</td></tr>`).join("")}</tbody></table></div></section>
+  ${REGRAS_HTML}
+  <section class="card stack"><h3>Fontes</h3>
+    <ul style="margin:0;padding-left:18px;display:grid;gap:6px;font-size:.92rem">
+      <li><a href="https://dadosabertos.tse.jus.br" target="_blank" rel="noopener">Portal de Dados Abertos do TSE</a>: eleitos em 2022, 2024 e 2026, com partidos.</li>
+      <li><a href="https://dadosabertos.camara.leg.br" target="_blank" rel="noopener">Dados Abertos da Câmara dos Deputados</a>: deputados em exercício, projetos e votações nominais.</li>
+      <li><a href="https://www12.senado.leg.br/dados-abertos" target="_blank" rel="noopener">Dados Abertos do Senado Federal</a>: senadores em exercício.</li>
+    </ul>
+    <p class="muted" style="font-size:.84rem">O TSE registra quem foi eleito. Renúncias, cassações e licenças podem não aparecer: nesse caso, use “Informar que não está mais no cargo” na ficha da pessoa.</p></section>`;
+}
+function bindPolitica(){
+  document.querySelectorAll("[data-esf]").forEach(b=>b.onclick=()=>{polEsf=b.dataset.esf;render()});
+  const f=$("#polFila");if(f)f.onclick=openFila; bindPeople();
+}
+function personRow(p,papel){
+  if(p.grupo)return `<button class="item-btn person" data-pid="${p.id}"><span class="avatar grp">${p.lista.length}</span><span class="grow"><b>${esc(p.nome)}</b><br><span class="muted" style="font-size:.86rem">${esc(p.cargo)}${papel?" · "+esc(papel):""}</span></span></button>`;
+  if(p.placeholder)return `<button class="item-btn person" data-pid="${p.id}"><span class="avatar empty" aria-hidden="true">?</span><span class="grow"><b>${esc(p.cargo)}</b><br><span class="muted" style="font-size:.86rem">${p.pend?`${p.pend} ${p.pend>1?"sugestões aguardam":"sugestão aguarda"} conferência`:"Não informado · toque para informar"}${papel?" · "+esc(papel):""}</span></span></button>`;
+  const ini=p.nome.split(" ").map(x=>x[0]).slice(0,2).join("");
+  return `<button class="item-btn person" data-pid="${p.id}"><span class="avatar" style="background:${p.cor}">${esc(ini)}</span><span class="grow"><b>${esc(p.nome)}</b> <span class="muted mono">${esc(p.partido.s)}</span>${p.crowd?' <span class="pill s-resolvida" style="font-size:.68rem"><i></i>Conferido</span>':""}<br><span class="muted" style="font-size:.86rem">${esc(p.cargo)}${papel?" · "+esc(papel):""}</span></span></button>`;
+}
+const VOTO={"Sim":["sim","SIM"],"Não":["nao","NÃO"],"Abstenção":["abst","ABST."],"Obstrução":["abst","OBSTR."],"Artigo 17":["aus","ART. 17"]};
+function openPerson(p){
+  if(!p)return;
+  if(p.grupo){openSheet(p.nome,`<p class="muted">${esc(p.cargo)} · Fonte: ${esc(p.fonte)}</p><label class="f">Buscar<input type="search" id="gq" placeholder="Nome ou partido"></label><div class="list" id="gl">${p.lista.map(x=>personRow(x)).join("")}</div>`,el=>{
+    registerPeople(p.lista);bindPeople(el);$("#gq",el).oninput=e=>{const q=norm(e.target.value);$("#gl",el).innerHTML=p.lista.filter(x=>norm(x.nome+" "+x.partido.s+" "+(x.nomeCompleto||"")).includes(q)).map(x=>personRow(x)).join("");bindPeople(el)}});return}
+  if(p.placeholder){openAlvo(p.alvo,p.cargo+(p.esfera==="municipal"?" — "+S.cidade.nome:p.esfera==="estadual"?" — "+(UFS[S.cidade.uf]||""):""),"titular");return}
+  if(!p.real&&!p.crowd)return openPersonDemo(p);
+  const aviso=p.real?valorDe("aviso|"+p.id):null;
+  const msg=`${/^Vereador/.test(p.cargo)?"Exmo(a). Sr(a). Vereador(a)":"Exmo(a). Sr(a)."} ${p.nome},\n\nSou ${S.perfil.cidadeVoto?"eleitor(a) em "+S.perfil.cidadeVoto:"morador(a) de "+cidadeNome()} e escrevo para pedir sua atenção ao seguinte problema:\n\n[descreva o problema e o que espera do seu mandato]\n\nAtenciosamente,\n${S.perfil.nome}`;
+  const d=p.dep;
+  openSheet(p.nome,`
+    <div class="person"><span class="avatar" style="background:${p.cor};width:56px;height:56px;font-size:1.1rem">${esc(p.nome.split(" ").map(x=>x[0]).slice(0,2).join(""))}</span><div class="grow"><b>${esc(p.cargo)}</b><br><span class="muted">${esc(p.partido.n)}${p.partido.s&&p.partido.n!==p.partido.s?` (${esc(p.partido.s)})`:""}</span>${p.nomeCompleto&&p.nomeCompleto!==p.nome?`<br><span class="muted" style="font-size:.84rem">${esc(p.nomeCompleto)}</span>`:""}</div></div>
+    <p class="muted" style="font-size:.84rem">Fonte: ${esc(p.crowd?"informação de moradores, conferida":p.fonte)}${p.crowd&&p.crowd.fonte?` · <a href="${esc(p.crowd.fonte)}" target="_blank" rel="noopener noreferrer">ver fonte</a>`:""}</p>
+    ${p.crowd&&p.crowd.div?`<div class="notice"><b>Divergência</b><span>Há outro valor também conferido. Veja o histórico.</span></div>`:""}
+    ${aviso&&aviso.ver?`<div class="notice"><b>Atenção</b><span>Moradores informaram, com fonte conferida: ${esc(aviso.ver.c.valor.texto)} <a href="${esc(aviso.ver.c.fonte)}" target="_blank" rel="noopener noreferrer">Fonte</a></span></div>`:""}
+    ${d?`<div class="stat-row"><div class="stat"><b>${d.pls.total}</b><span>Projetos como autor principal desde 2023</span></div><div class="stat"><b>${d.pls.lei}</b><span>Viraram lei</span></div><div class="stat"><b>${d.pls.tram}</b><span>Em tramitação</span></div><div class="stat"><b>${d.part!=null?d.part+"%":"—"}</b><span>Participação em votações nominais do plenário</span></div></div>
+      ${d.pls.ult.length?`<h3>Projetos mais recentes</h3><div class="list">${d.pls.ult.map(x=>`<a class="item-btn" href="https://www.camara.leg.br/propostas-legislativas/${esc(x.id)}" target="_blank" rel="noopener" style="text-decoration:none"><span class="grow stack" style="gap:2px"><span class="row" style="gap:8px"><b class="mono">${esc(x.t)}</b><span class="pill ${x.st==="Virou lei"?"s-resolvida":x.st==="Em tramitação"?"s-enviada":"s-rascunho"}"><i></i>${esc(x.st)}</span></span><span class="muted" style="font-size:.88rem">${esc(x.ementa)}</span></span></a>`).join("")}</div>`:""}
+      <h3>Votações recentes no plenário</h3>${d.votos.length?`<div class="list">${d.votos.map(v=>{const m=VOTO[v.v]||["aus",v.v||"—"];return `<div class="row"><span class="grow" style="font-size:.9rem">${esc(v.desc||"Votação nominal")}<br><span class="muted mono" style="font-size:.76rem">${esc(v.d)}</span></span><span class="vote ${m[0]}">${esc(m[1])}</span></div>`}).join("")}</div>`:`<p class="muted" style="font-size:.9rem">A Câmara não publicou votos individuais recentes nos dados abertos. Consulte a página oficial.</p>`}`
+    :`<p class="muted" style="font-size:.9rem">${p.real?"Projetos e votações deste cargo ainda não estão integrados: cada Câmara Municipal e Assembleia publica em formato próprio.":""}</p>`}
+    ${p.url||p.email?`<div class="card stack" style="gap:6px">${p.url?`<a href="${esc(p.url)}" target="_blank" rel="noopener">Página oficial</a>`:""}${p.email?`<div class="row"><span class="mono grow" style="overflow-wrap:anywhere">${esc(p.email)}</span><button class="btn small" id="pEm">Copiar e-mail</button></div>`:""}</div>`:""}
+    <h3>Escrever para ${esc(p.nome.split(" ")[0])}</h3><div class="mail"><pre id="pMsg">${esc(msg)}</pre></div>
+    <div class="row"><button class="btn primary" id="pCopy">Copiar mensagem</button>
+    ${p.real?`<button class="btn ghost" id="pAviso">Informar que não está mais no cargo</button>`:`<button class="btn ghost" id="pHist">Ver histórico e conferências</button>`}</div>`,el=>{
+      $("#pCopy",el).onclick=()=>copyText(msg,$("#pMsg",el));
+      const em=$("#pEm",el);if(em)em.onclick=()=>copyText(p.email);
+      const av=$("#pAviso",el);if(av)av.onclick=()=>{closeSheet();openContrib({alvo:"aviso|"+p.id,campo:"aviso",rotulo:`${p.nome} — ${p.cargo}`,ajuda:"Use só quando houver documento público: renúncia, cassação, licença ou posse de suplente. O alerta aparece na ficha depois de conferido; o dado oficial não é apagado."})};
+      const hi=$("#pHist",el);if(hi)hi.onclick=()=>{closeSheet();openAlvo(p.crowd.alvo,p.cargo,"titular")};
+    });
 }
 
 /* ---------- PROPOSTAS ---------- */
@@ -1027,7 +1320,10 @@ function bindPropostas(){
 }
 function openProp(id){
   const p=S.propostas.find(x=>x.id===id); if(!p)return; const n=contaApoio(id);
-  const c={nome:p.cidade,uf:p.uf}; const o=officials(c); const alvos=p.esfera==="municipal"?o.municipal.slice(2,5):p.esfera==="estadual"?o.estadual.slice(1,4):o.federal.slice(1,4); registerPeople(alvos);
+  const c={nome:p.cidade,uf:p.uf}; let alvos;
+  if(Dados.disp){const o=oficiais(c);alvos=p.esfera==="municipal"?o.municipal.leg:p.esfera==="estadual"?o.estadual.leg:o.federal.leg}
+  else{const o=officialsDemo(c);alvos=p.esfera==="municipal"?o.municipal.slice(2,5):p.esfera==="estadual"?o.estadual.slice(1,4):o.federal.slice(1,4)}
+  registerPeople(alvos);
   const share=`Apoie a proposta "${p.titulo}" no app Cidadania. ${p.ementa} Já são ${n} apoios.`;
   const ofi=`Exmo(a). Sr(a). Parlamentar,\n\nEncaminho sugestão de projeto de lei apoiada por ${n} ${n===1?"pessoa":"pessoas"} no app Cidadania:\n\n${p.titulo}\nEmenta: ${p.ementa}\n${p.just?"\nJustificativa: "+p.just+"\n":""}\nPeço que avalie apresentar a proposta ou incorporá-la a projeto em tramitação.\n\nAtenciosamente,\n${S.perfil.nome}`;
   openSheet(p.titulo,`
@@ -1036,8 +1332,8 @@ function openProp(id){
     <div class="row"><button class="support" data-apoio="${esc(id)}" aria-pressed="${apoiei(id)}" style="flex-direction:row;gap:8px;padding:8px 14px"><b>${n}</b><small>${apoiei(id)?"Apoiado":"Apoiar"}</small></button><button class="btn" id="shr">Copiar convite para apoio</button></div>
     <h3>Enviar a parlamentares</h3><div class="list">${alvos.map(x=>personRow(x)).join("")}</div>
     <div class="mail"><pre id="ofi">${esc(ofi)}</pre></div><button class="btn primary" id="ofiC">Copiar ofício</button>
-    <div class="why"><b>E se a Câmara não quiser?</b> A iniciativa popular permite protocolar o projeto diretamente: no município, com assinaturas de 5% do eleitorado; no Congresso, com 1% do eleitorado nacional, distribuído por pelo menos 5 estados e com no mínimo 0,3% dos eleitores de cada um. Desde 2023 a Câmara dos Deputados aceita assinaturas eletrônicas via gov.br.</div>
-    <p class="muted" style="font-size:.82rem"><span class="pill demo">Demonstração</span> Parlamentares fictícios.</p>`,el=>{
+    <div class="why"><b>E se a Câmara não quiser?</b> A iniciativa popular permite protocolar o projeto diretamente: no município, com assinaturas de 5% do eleitorado; no Congresso, com 1% do eleitorado nacional, distribuído por pelo menos 5 estados e com no mínimo 0,3% dos eleitores de cada um.</div>
+    ${Dados.disp?"":`<p class="muted" style="font-size:.82rem"><span class="pill demo">Demonstração</span> Parlamentares fictícios neste modo.</p>`}`,el=>{
       $("#shr",el).onclick=()=>copyText(share); $("#ofiC",el).onclick=()=>copyText(ofi,$("#ofi",el)); bindPeople(el);
       el.querySelectorAll("[data-apoio]").forEach(b=>b.onclick=async()=>{const sid=`${id}__${S.uid}`;if(apoiei(id))await Store.del("apoios","apoios",sid);else await Store.put("apoios","apoios",sid,{alvo:id,uid:S.uid,em:Date.now()});closeSheet();render();openProp(id)});
     });
@@ -1046,13 +1342,13 @@ function openProp(id){
 /* ---------- rede descentralizada (Nostr) para a versão instalável ---------- */
 const RELAYS=["wss://relay.damus.io","wss://nos.lol","wss://relay.primal.net"];
 const APP_TAG="cidadania-app-v1";
-const COLKEY={mural:"mural",propostas:"propostas",apoios:"apoios",diretorio:"diretorio",cidades_mundo:"cidadesMundo"};
-const CACHEKEY={mural:"cid.mural",propostas:"cid.prop",apoios:"cid.apoios",cidadesMundo:"cid.mundo",diretorio:"cid.dir"};
+const COLKEY={mural:"mural",propostas:"propostas",apoios:"apoios",diretorio:"diretorio",cidades_mundo:"cidadesMundo",contrib:"contribs",cvoto:"cvotos"};
+const CACHEKEY={mural:"cid.mural",propostas:"cid.prop",apoios:"cid.apoios",cidadesMundo:"cid.mundo",diretorio:"cid.dir",contribs:"cid.contrib",cvotos:"cid.cvoto"};
 let renderTimer=null;
 function scheduleRender(){clearTimeout(renderTimer);renderTimer=setTimeout(()=>{const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&$("#app").contains(a)){scheduleRender();return}render()},250)}
 function cacheShared(key){lsSet(CACHEKEY[key],S[key])}
 const Nostr={
-  pool:null,sk:null,pk:null,ready:false,seen:{},relaysOk:new Set(),
+  pool:null,sk:null,pk:null,ready:false,seen:{},primeiro:{},relaysOk:new Set(),
   init(){
     if(!window.NostrTools)return false; const T=window.NostrTools;
     try{
@@ -1067,7 +1363,8 @@ const Nostr={
   recv(ev){
     const d=(ev.tags.find(t=>t[0]==="d")||[])[1]||""; const m=d.match(/^cid:([a-z_]+):(.+)$/); if(!m)return;
     const col=m[1],id=m[2],key=COLKEY[col]; if(!key)return;
-    if(col==="apoios"&&id.split("__")[1]!==ev.pubkey)return;
+    if(!this.primeiro[ev.pubkey]||ev.created_at<this.primeiro[ev.pubkey])this.primeiro[ev.pubkey]=ev.created_at;
+    if((col==="apoios"||col==="cvoto")&&id.split("__")[1]!==ev.pubkey)return;
     if(col==="propostas"||col==="mural"){/* autoria: só o autor original pode alterar */}
     const prev=this.seen[d]; if(prev){if(prev.pubkey!==ev.pubkey)return;if(prev.created_at>ev.created_at)return}
     this.seen[d]={pubkey:ev.pubkey,created_at:ev.created_at};
@@ -1078,6 +1375,7 @@ const Nostr={
     const T=window.NostrTools;
     const ev=T.finalizeEvent({kind:30078,created_at:Math.floor(Date.now()/1000),tags:[["d",`cid:${col}:${id}`],["t",APP_TAG],["c",col]],content:data?JSON.stringify(data):""},this.sk);
     this.seen[`cid:${col}:${id}`]={pubkey:this.pk,created_at:ev.created_at};
+    if(!this.primeiro[this.pk])this.primeiro[this.pk]=ev.created_at;
     const res=await Promise.allSettled(this.pool.publish(RELAYS,ev));
     const ok=res.filter(r=>r.status==="fulfilled").length; if(!ok)toast("Sem conexão com a rede agora. Tente publicar de novo mais tarde.");
     return ok>0;
@@ -1089,7 +1387,7 @@ const Nostr={
 function applyShared(key,id,data,autor){
   if(key==="diretorio"){if(data)S.diretorio[id]={id,...data};else delete S.diretorio[id];cacheShared(key);return}
   const arr=S[key]; const i=arr.findIndex(x=>x.id===id);
-  if(!data){if(i>=0)arr.splice(i,1)} else {const doc={id,...data,_autor:autor}; if(i>=0)arr[i]=doc; else arr.push(doc)}
+  if(!data){if(i>=0)arr.splice(i,1)} else {const doc={id,...data,_autor:autor}; if(key==="contribs"||key==="cvotos"){doc.autor=autor;if(key==="cvotos")doc.uid=autor} if(i>=0)arr[i]=doc; else arr.push(doc)}
   cacheShared(key);
 }
 
@@ -1217,11 +1515,13 @@ function contexto(){
     lai:enviados.some(r=>r.modelo==="lai"), escalou:Object.keys(Prog.d.escalou).length,
     propostas:minhasProps.length, maxApoio:Math.max(0,...minhasProps.map(x=>contaApoio(x.id))),
     apoiosDados:S.apoios.filter(a=>a.uid===S.uid&&!minhasProps.some(x=>x.id===a.alvo)).length,
-    fichaOk:!!(p.cpf&&p.cidadeVoto&&p.bairro), dias:Prog.d.dias.length, acertos1:Prog.d.acertos1
+    fichaOk:!!(p.cpf&&p.cidadeVoto&&p.bairro), dias:Prog.d.dias.length, acertos1:Prog.d.acertos1,
+    contribVer:S.contribs.filter(x=>autorDe(x)===S.uid&&avaliar(x).st==="verificado").length,
+    conferencias:S.cvotos.filter(v=>v.uid===S.uid).length
   };
 }
 function xpTotal(c=contexto()){
-  return c.aulas*20 + TRILHAS.filter(t=>trilhaOk(t.id)).length*50 + c.enviados*15 + c.respostas*10 + c.resolvidas*25 + c.escalou*10 + c.propostas*30 + c.apoiosDados*5 + (c.fichaOk?10:0);
+  return c.aulas*20 + TRILHAS.filter(t=>trilhaOk(t.id)).length*50 + c.enviados*15 + c.respostas*10 + c.resolvidas*25 + c.escalou*10 + c.propostas*30 + c.apoiosDados*5 + (c.fichaOk?10:0) + c.contribVer*15 + Math.min(c.conferencias,50)*2;
 }
 function nivel(xp){let i=0;for(let k=0;k<NIVEIS.length;k++)if(xp>=NIVEIS[k][0])i=k;const prox=NIVEIS[i+1];return {i:i+1,nome:NIVEIS[i][1],min:NIVEIS[i][0],prox:prox?prox[0]:null,proxNome:prox?prox[1]:null}}
 
@@ -1256,6 +1556,8 @@ const BADGES=[
  {id:"legislador",n:"Legislador(a) Popular",d:"Publicar uma sugestão de projeto de lei.",f:"part",tier:1,g:"scroll",t:c=>c.propostas>=1},
  {id:"mobilizador",n:"Mobilizador(a)",d:"Ter uma proposta sua com 10 apoios.",f:"part",tier:3,g:"people",t:c=>c.maxApoio>=10},
  {id:"vizinho",n:"Vizinhança Solidária",d:"Apoiar 5 relatos ou propostas de outras pessoas.",f:"part",tier:1,g:"people",t:c=>c.apoiosDados>=5},
+ {id:"conferente",n:"Conferente",d:"Conferir 10 informações enviadas por outras pessoas.",f:"part",tier:1,g:"eye",t:c=>c.conferencias>=10},
+ {id:"curador",n:"Fonte Confiável",d:"Ter 3 contribuições suas verificadas pela comunidade.",f:"part",tier:2,g:"check",t:c=>c.contribVer>=3},
  {id:"ficha",n:"Ficha Completa",d:"Preencher CPF, cidade de votação e bairro no perfil.",f:"part",tier:1,g:"home",t:c=>c.fichaOk}
 ];
 const TIER={1:{n:"Bronze",c:"#B4703A",c2:"#E0A877"},2:{n:"Prata",c:"#7F8C97",c2:"#D4DCE3"},3:{n:"Ouro",c:"#C89211",c2:"#F6D26B"}};
@@ -1359,6 +1661,7 @@ function bindPerfil(){
 /* ---------- início ---------- */
 Store.subscribeAll();
 if(window.claude&&claude.use){Store.init().then(render)} else Nostr.init();
+Dados.init();
 render();
 if(window.__SITE__)setupPWA();
 </script>

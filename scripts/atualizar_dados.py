@@ -210,14 +210,18 @@ def camara():
         for p in camara_csv("proposicoes", a):
             if p.get("siglaTipo") in ("PL", "PLP", "PEC"):
                 props[p.get("id")] = p
+    vistos = set()
     for a in anos:
         for au in camara_csv("proposicoesAutores", a):
             try:
                 did = int(au.get("idDeputadoAutor") or 0)
             except ValueError:
                 continue
-            if did not in deps or str(au.get("ordemAssinatura")) != "1":
+            if did not in deps or str(au.get("ordemAssinatura")).split(".")[0] != "1":
                 continue
+            if (did, au.get("idProposicao")) in vistos:
+                continue
+            vistos.add((did, au.get("idProposicao")))
             p = props.get(au.get("idProposicao"))
             if not p:
                 continue
@@ -234,8 +238,8 @@ def camara():
     for a in anos[-2:]:
         for v in camara_csv("votacoes", a):
             if (v.get("siglaOrgao") or "").upper() == "PLEN":
-                plen[v.get("id")] = {"d": (v.get("data") or v.get("dataHoraRegistro") or "")[:10],
-                                     "desc": (v.get("ultimaApresentacaoProposicao_descricao") or v.get("descricao") or "")[:160]}
+                desc = re.sub(r"\s+", " ", (v.get("descricao") or v.get("ultimaApresentacaoProposicao_descricao") or "").replace("•", " ")).strip()
+                plen[v.get("id")] = {"d": (v.get("data") or v.get("dataHoraRegistro") or "")[:10], "desc": desc[:180]}
     contados = defaultdict(set)
     votos_com_registro = set()
     for a in anos[-2:]:

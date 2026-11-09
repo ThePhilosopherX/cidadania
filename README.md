@@ -7,7 +7,9 @@ Aplicativo de cidadania para registrar problemas da cidade, descobrir o órgão 
 - **Instalável (PWA, Progressive Web App):** abra o endereço no celular ou no computador e use "Instalar" (Android, Chrome, Edge) ou "Compartilhar → Adicionar à Tela de Início" (iPhone). Depois de aberto uma vez, funciona sem internet.
 - **Mural descentralizado:** mural, propostas e apoios circulam pela rede Nostr (Notes and Other Stuff Transmitted by Relays), sem servidor central. Cada aparelho cria uma chave e assina o que publica. Relays usados: `relay.damus.io`, `nos.lol`, `relay.primal.net`.
 - **Dados pessoais ficam no aparelho:** perfil, CPF, cobranças e progresso nas aulas nunca são enviados à rede.
-- **Dados políticos de demonstração:** nomes, partidos, projetos e votos exibidos são fictícios até a integração com as bases oficiais (Câmara, Senado, TSE e Portal da Transparência).
+- **Dados oficiais:** toda segunda-feira a rotina `.github/workflows/atualizar-dados.yml` roda `scripts/atualizar_dados.py`, que baixa eleitos do TSE (Tribunal Superior Eleitoral), deputados, projetos e votações da Câmara e senadores do Senado, e grava os resultados em `data/`. Dá para rodar na hora em **Actions → Atualizar dados oficiais → Run workflow**.
+- **Contribuições com conferência:** secretários, ministros, e-mails de órgãos e alertas de quem deixou o cargo são informados por moradores, com fonte, e só valem depois de conferidos por outras pessoas (3 conferências com fonte oficial, 5 sem). Contestações fundamentadas tiram o dado de uso.
+- **Curadoria:** `data/curadores.json` lista as chaves públicas (npub, copiadas do Perfil no app) de quem pode confirmar ou retirar contribuições com peso maior.
 
 ## Publicar no GitHub Pages
 
