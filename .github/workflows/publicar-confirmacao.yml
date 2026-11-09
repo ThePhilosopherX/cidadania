@@ -2,7 +2,8 @@ name: Publicar confirmação de e-mail
 
 # Publica o serviço worker/ na Cloudflare e registra no app o endereço do serviço
 # e a chave pública que assina os atestados. Precisa destes segredos no repositório:
-# CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, BREVO_API_KEY, REMETENTE_EMAIL, CHAVE_MESTRA.
+# CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CHAVE_MESTRA e, para enviar os códigos,
+# GMAIL_USUARIO + GMAIL_SENHA_APP (recomendado) ou BREVO_API_KEY + REMETENTE_EMAIL.
 
 on:
   workflow_dispatch:
@@ -24,6 +25,8 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      GMAIL_USUARIO: ${{ secrets.GMAIL_USUARIO }}
+      GMAIL_SENHA_APP: ${{ secrets.GMAIL_SENHA_APP }}
       BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
       REMETENTE_EMAIL: ${{ secrets.REMETENTE_EMAIL }}
       CHAVE_MESTRA: ${{ secrets.CHAVE_MESTRA }}
@@ -37,9 +40,10 @@ jobs:
         id: seg
         run: |
           faltam=""
-          for s in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID BREVO_API_KEY REMETENTE_EMAIL CHAVE_MESTRA; do
+          for s in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID CHAVE_MESTRA; do
             [ -z "${!s}" ] && faltam="$faltam $s"
           done
+          if [ -z "$GMAIL_USUARIO$GMAIL_SENHA_APP" ] && [ -z "$BREVO_API_KEY$REMETENTE_EMAIL" ]; then faltam="$faltam GMAIL_USUARIO GMAIL_SENHA_APP"; fi
           if [ -n "$faltam" ]; then
             if [ "${{ github.event_name }}" = "push" ]; then
               echo "::notice::Serviço de confirmação ainda não configurado (faltam:$faltam). Nada a publicar."
@@ -105,8 +109,9 @@ jobs:
           npx wrangler deploy
           printf '%s' "$ATTESTOR_SK" | npx wrangler secret put ATTESTOR_SK
           printf '%s' "$PEPPER" | npx wrangler secret put PEPPER
-          printf '%s' "$BREVO_API_KEY" | npx wrangler secret put BREVO_API_KEY
-          printf '%s' "$REMETENTE_EMAIL" | npx wrangler secret put REMETENTE_EMAIL
+          for s in GMAIL_USUARIO GMAIL_SENHA_APP BREVO_API_KEY REMETENTE_EMAIL; do
+            if [ -n "${!s}" ]; then printf '%s' "${!s}" | npx wrangler secret put $s; fi
+          done
 
       - name: Registrar o serviço no app
         if: steps.seg.outputs.pronto == 'sim'

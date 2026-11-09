@@ -54,16 +54,24 @@ function evento(env, sujeitoPk, conteudo) {
 }
 
 async function enviarEmail(env, para, codigo) {
-  const corpo = {
-    sender: { email: env.REMETENTE_EMAIL, name: "Cidadania" },
-    to: [{ email: para }],
-    subject: `Seu código do Cidadania: ${codigo}`,
-    textContent: `Seu código para confirmar este e-mail no app Cidadania é ${codigo}.\n\nEle vale por 15 minutos. Se você não pediu este código, ignore esta mensagem: ninguém conseguirá usar seu e-mail sem ele.\n\nCidadania · https://thephilosopherx.github.io/cidadania/`,
-  };
+  const assunto = `Seu código do Cidadania: ${codigo}`;
+  const texto = `Seu código para confirmar este e-mail no app Cidadania é ${codigo}.\n\nEle vale por 15 minutos. Se você não pediu este código, ignore esta mensagem: ninguém conseguirá usar seu e-mail sem ele.\n\nCidadania · https://thephilosopherx.github.io/cidadania/`;
+  // Caminho principal: uma conta Gmail com senha de app (SMTP, sem cadastro de empresa).
+  if (env.GMAIL_USUARIO && env.GMAIL_SENHA_APP) {
+    const { WorkerMailer } = await import("worker-mailer");
+    const mailer = await WorkerMailer.connect({
+      credentials: { username: env.GMAIL_USUARIO, password: env.GMAIL_SENHA_APP.replace(/\s+/g, "") },
+      authType: "plain", host: "smtp.gmail.com", port: 465, secure: true,
+    });
+    await mailer.send({ from: { name: "Cidadania", email: env.GMAIL_USUARIO }, to: { email: para }, subject: assunto, text: texto });
+    await mailer.close?.();
+    return;
+  }
+  // Alternativa: Brevo, se configurada.
   const r = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: { "api-key": env.BREVO_API_KEY, "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify(corpo),
+    body: JSON.stringify({ sender: { email: env.REMETENTE_EMAIL, name: "Cidadania" }, to: [{ email: para }], subject: assunto, textContent: texto }),
   });
   if (!r.ok) throw new Error(`envio falhou (${r.status})`);
 }

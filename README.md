@@ -33,7 +33,7 @@ O serviço em `worker/` (Cloudflare Workers) envia um código de 6 dígitos ao e
 A rotina `.github/workflows/publicar-confirmacao.yml` publica o serviço e registra no app o endereço dele (`data/config.json`) e a chave que assina os atestados (`data/atestadores.json`). Ela precisa destes segredos em **Settings → Secrets and variables → Actions**:
 
 - `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID`: conta gratuita da Cloudflare, token com o modelo "Edit Cloudflare Workers".
-- `BREVO_API_KEY` e `REMETENTE_EMAIL`: conta gratuita na Brevo, com o e-mail remetente verificado.
+- `GMAIL_USUARIO` e `GMAIL_SENHA_APP`: uma conta Gmail e uma senha de app dela (Conta Google → Segurança → Verificação em duas etapas → Senhas de app). Os códigos saem desse endereço, até 500 por dia. Como alternativa, `BREVO_API_KEY` e `REMETENTE_EMAIL`.
 - `CHAVE_MESTRA`: uma frase longa e aleatória (32 caracteres ou mais). Dela saem a chave que assina os atestados e o segredo das impressões de e-mail. Guarde-a: trocá-la invalida as confirmações já feitas.
 
 Em `data/config.json`, `conferenciaSoConfirmados: true` faz o app aceitar conferências de dados só de contas com identidade confirmada.
