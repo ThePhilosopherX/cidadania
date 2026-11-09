@@ -1124,6 +1124,49 @@ const REGRAS_HTML=`<details class="acc"><summary>Como evitamos erros e fraudes</
   <p><b>Divergência.</b> Se dois valores diferentes forem verificados, o app mostra o mais conferido e avisa que há divergência.</p>
   <p><b>Limites e curadoria.</b> Cada chave faz até ${LIMITE_DIA} contribuições por dia. Curadores identificados podem confirmar ou retirar dados, sempre de forma registrada.</p>
   <p><b>Histórico aberto.</b> Toda contribuição fica visível com a fonte, a chave de quem enviou e cada conferência.</p></div></details>`;
+/* ---------- GUIA: como contribuir com dados ---------- */
+const GUIA={
+ "sec-mun":{t:"Secretário(a) municipal",onde:[
+   ["Site da prefeitura","Procure as páginas “Secretarias”, “Governo” ou “Estrutura administrativa”. Elas costumam trazer o nome de cada secretário."],
+   ["Diário Oficial do Município","É a prova mais forte. Busque o nome da secretaria junto com “nomeia” ou “nomear” e abra a portaria ou o decreto de nomeação. Muitas cidades publicam no diário oficial da associação de municípios do seu estado."],
+   ["Portal da Transparência da prefeitura","Em “Servidores”, “Pessoal” ou “Folha de pagamento”, procure o cargo de secretário da pasta."]]},
+ "sec-est":{t:"Secretário(a) estadual",onde:[
+   ["Site do governo do estado","A página “Secretarias” lista quem comanda cada pasta."],
+   ["Diário Oficial do Estado","Busque o nome da secretaria com “nomeia” para achar o ato de nomeação."],
+   ["Portal da Transparência do estado","Em “Servidores” ou “Pessoal”, procure o cargo de secretário."]]},
+ "ministro":{t:"Ministro(a)",onde:[
+   ["Site do ministério","Todo ministério tem a página “Quem é quem” ou “Ministro” no endereço gov.br."],
+   ["Diário Oficial da União","No site in.gov.br, busque o nome do ministério com “nomear” para achar o decreto de nomeação."]]},
+ "email":{t:"E-mail de órgão",onde:[
+   ["Página do órgão","Procure “Fale conosco”, “Contato” ou “Ouvidoria” no site oficial."],
+   ["Carta de Serviços ao Usuário","A Lei 13.460/2017 obriga cada órgão a publicar seus canais de atendimento nessa carta. Ela costuma estar no rodapé do site."],
+   ["Prefira domínio oficial","Endereços terminados em .gov.br, .leg.br ou .jus.br passam com menos conferências. E-mail pessoal ou de provedor gratuito exige mais conferências e pode ser contestado."]]},
+ "aviso":{t:"Saída do cargo",onde:[
+   ["Diário Oficial","Exoneração, renúncia, licença e posse de substituto são publicadas no diário oficial do município, do estado ou da União."],
+   ["Câmara Municipal ou Assembleia","O site da casa legislativa publica a posse de suplentes e as licenças de vereadores e deputados."],
+   ["Justiça Eleitoral","Cassações aparecem nas decisões do TRE (Tribunal Regional Eleitoral) ou do TSE. Notícia de jornal ajuda na observação, mas não substitui o documento."]]}
+};
+function guiaChave(alvo){return (alvo||"").split("|")[0]}
+const COMO_ENVIAR=`<ol class="flow">
+  <li><div><b>Abra a página ou o documento</b><br><span class="muted">Não precisa baixar nada. O que vale é o endereço onde qualquer pessoa pode ver o mesmo dado.</span></div></li>
+  <li><div><b>Copie o link</b><br><span class="muted">No celular, toque em Compartilhar e depois em Copiar link. No computador, copie o endereço da barra do navegador. Se o dado está num PDF do diário oficial, copie o link do PDF e escreva na observação a data da edição e a página.</span></div></li>
+  <li><div><b>Recebeu só o arquivo?</b><br><span class="muted">Se alguém mandou o PDF por WhatsApp, procure a mesma edição no site do diário oficial para conseguir o link. O arquivo solto não pode ser conferido por outras pessoas.</span></div></li>
+  <li><div><b>Anexe um print, se quiser</b><br><span class="muted">Uma captura de tela do trecho que mostra o dado ajuda quem vai conferir. O print complementa o link, não o substitui.</span></div></li>
+  <li><div><b>Cole e envie</b><br><span class="muted">O dado entra como “aguardando conferência” e passa a valer quando outras pessoas confirmarem.</span></div></li></ol>`;
+function guiaHtml(chave,aberto){
+  const g=GUIA[chave]; if(!g)return "";
+  return `<details class="acc" ${aberto?"open":""}><summary>Onde encontrar: ${esc(g.t.toLowerCase())}</summary><div class="body" style="font-size:.92rem">${g.onde.map(([a,b])=>`<p><b>${esc(a)}.</b> ${esc(b)}</p>`).join("")}</div></details>
+  <details class="acc"><summary>Como enviar a fonte e o print</summary><div class="body" style="font-size:.92rem">${COMO_ENVIAR}</div></details>`;
+}
+function openComoContribuir(){
+  openSheet("Como contribuir com dados",`<p class="muted">Secretários, ministros, e-mails de órgãos e mudanças de cargo não estão nas bases oficiais que o app lê. Moradores informam, com fonte, e outros moradores conferem.</p>
+    <h3>Como enviar</h3>${COMO_ENVIAR}
+    <h3>Onde encontrar cada dado</h3>${Object.keys(GUIA).map(k=>guiaHtml(k,false).split("</details>")[0]+"</details>").join("")}
+    <h3>Como conferir o dado de outra pessoa</h3>
+    <p style="font-size:.92rem">Abra a fonte informada e veja se o dado está lá, com o mesmo nome e para o mesmo cargo. Se estiver, toque em “Conferi: está certo”. Se não estiver, ou se a fonte for antiga, toque em “Está errado” e diga o que encontrou. Confirmar sem abrir a fonte prejudica todo mundo.</p>
+    ${REGRAS_HTML}`);
+}
+
 function openContrib(op){
   const tipo=op.campo;
   const campos=tipo==="email"?`<label class="f">E-mail oficial do órgão<input type="email" id="ctVal" value="${esc(op.valor||"")}" placeholder="ouvidoria@prefeitura.gov.br"></label>`
@@ -1131,16 +1174,21 @@ function openContrib(op){
     :`<label class="f">Nome de quem ocupa o cargo hoje<input type="text" id="ctVal"></label><label class="f">Partido (sigla, se houver)<input type="text" id="ctPart" maxlength="12"></label>`;
   openSheet(op.rotulo,`
     <p class="muted">${esc(op.ajuda||"Informe o dado e o link onde ele pode ser conferido. Outras pessoas vão conferir antes de ele valer para todos.")}</p>
+    ${guiaHtml(guiaChave(op.alvo),true)}
     <form id="fCt" class="stack">${campos}
       <label class="f">Link da fonte <small>Página oficial, diário oficial ou portal da transparência onde isso aparece.</small><input type="text" inputmode="url" id="ctFonte" placeholder="https://…gov.br/…"></label>
       <p class="muted" id="ctTipo" style="font-size:.85rem"></p>
-      <label class="f">Observação (opcional)<input type="text" id="ctObs" maxlength="200"></label>
+      <label class="f">Observação (opcional) <small>Ex.: Diário Oficial de 03/11/2026, página 4.</small><input type="text" id="ctObs" maxlength="200"></label>
+      <label class="f">Print do trecho (opcional) <small>Uma imagem da parte do documento que mostra o dado.</small><input type="file" id="ctPrint" accept="image/*"></label>
+      <img id="ctPrev" alt="Prévia do print" hidden style="max-height:160px;border-radius:8px;border:1px solid var(--line);align-self:flex-start">
       <p class="muted" id="ctErr" role="alert" hidden></p>
       <button class="btn primary" type="submit">Enviar para conferência</button>
     </form>${REGRAS_HTML}`,el=>{
       const fonteIn=$("#ctFonte",el),tipoEl=$("#ctTipo",el);
       const upd=()=>{const t=fonteTipo(fonteIn.value.trim());tipoEl.textContent=t==="nenhuma"?(fonteIn.value?"Link inválido.":"Sem fonte, o dado precisará de 5 conferências."):`${FONTE_TXT[t]}: precisa de ${t==="oficial"||t==="diario"?3:5} conferências.`};
       fonteIn.oninput=upd; upd();
+      let printData="";
+      $("#ctPrint",el).onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b=await shrinkImage(f,560,.5);printData=await blobToDataURL(b);const pv=$("#ctPrev",el);pv.src=printData;pv.hidden=false}catch(x){toast("Não foi possível ler a imagem")}};
       $("#fCt",el).onsubmit=async e=>{e.preventDefault();const er=$("#ctErr",el);const show=m=>{er.hidden=false;er.textContent=m};
         const raw=$("#ctVal",el).value.trim(); const fonte=fonteIn.value.trim();
         if(fonte&&!hostOf(fonte))return show("O link precisa começar com https://.");
@@ -1151,7 +1199,7 @@ function openContrib(op){
         const meusHoje=S.contribs.filter(x=>autorDe(x)===S.uid&&Date.now()-x.criado<864e5).length;
         if(meusHoje>=LIMITE_DIA)return show(`Você já fez ${LIMITE_DIA} contribuições hoje. Volte amanhã.`);
         const id="c_"+Date.now().toString(36)+uidLocal();
-        await Store.put("contrib","contribs",id,{alvo:op.alvo,campo:tipo,valor,fonte,obs:$("#ctObs",el).value.trim(),rotulo:op.rotulo,cidade:S.cidade.nome,uf:S.cidade.uf||"",autor:S.uid,criado:Date.now()});
+        await Store.put("contrib","contribs",id,{alvo:op.alvo,campo:tipo,valor,fonte,print:printData,obs:$("#ctObs",el).value.trim(),rotulo:op.rotulo,cidade:S.cidade.nome,uf:S.cidade.uf||"",autor:S.uid,criado:Date.now()});
         closeSheet();toast("Enviado. Agora outras pessoas vão conferir.");render()};
     });
 }
@@ -1176,6 +1224,7 @@ function openRevisar(cid){
     <div class="card stack" style="gap:6px;font-size:.9rem">
       <div><b>Fonte:</b> ${c.fonte?`<a href="${esc(c.fonte)}" target="_blank" rel="noopener noreferrer">${esc(hostOf(c.fonte)||c.fonte)}</a> <span class="muted">(${FONTE_TXT[fonteTipo(c.fonte)]})</span>`:'<span class="muted">nenhuma informada</span>'}</div>
       ${c.obs?`<div><b>Observação:</b> ${esc(c.obs)}</div>`:""}
+      ${c.print&&/^data:image\//.test(c.print)?`<div><b>Print enviado:</b><br><img src="${esc(c.print)}" alt="Print do trecho do documento" style="max-width:100%;max-height:260px;border-radius:8px;margin-top:6px"></div>`:""}
       <div class="muted">Enviado por <span class="mono">${esc(curto(autorDe(c)))}</span>${isCurador(autorDe(c))?" (curadoria)":""} em ${fmtDate(c.criado)} · ${a.nconf||0} confirmações, ${a.ncont||0} contestações</div>
     </div>
     ${votos.filter(v=>v.v<0&&v.motivo).length?`<div class="stack" style="gap:6px"><b>Motivos das contestações</b>${votos.filter(v=>v.v<0&&v.motivo).map(v=>`<p class="muted" style="font-size:.88rem">“${esc(v.motivo)}” — <span class="mono">${esc(curto(v.uid))}</span></p>`).join("")}</div>`:""}
@@ -1201,7 +1250,7 @@ function openFila(){
   const f=filaCidade(); const pode=podeConferir(S.uid);
   openSheet("Conferir dados",`<p class="muted">Informações enviadas por moradores que ainda precisam de conferência. Abra a fonte de cada uma antes de responder.</p>
     ${pode||!govbrAtivo()?"":`<div class="notice"><b>Só com gov.br</b><span>Você pode ver a fila, mas para conferir precisa vincular sua conta gov.br no Perfil.</span></div>`}
-    ${f.length?`<div class="list">${f.map(x=>contribRow(x.c,x.a)).join("")}</div>`:`<p><b>Nada para conferir agora.</b></p>`}${REGRAS_HTML}`,el=>bindContribRows(el));
+    ${f.length?`<div class="list">${f.map(x=>contribRow(x.c,x.a)).join("")}</div>`:`<p><b>Nada para conferir agora.</b></p>`}<button class="btn small" id="filaComo">Como conferir e como contribuir</button>${REGRAS_HTML}`,el=>{bindContribRows(el);$("#filaComo",el).onclick=()=>{closeSheet();openComoContribuir()}});
 }
 
 /* ---------- POLÍTICA (tela) ---------- */
@@ -1221,7 +1270,7 @@ function viewPolitica(){
   ${o.faltaMun&&polEsf==="municipal"?`<div class="notice"><b>Sem dados</b><span>Não encontramos ${esc(S.cidade.nome)} na base do TSE. Isso acontece quando o nome do município mudou de grafia.</span></div>`:""}
   <section class="office-group"><h3>Executivo</h3><p class="muted" style="font-size:.9rem">${exe[polEsf]}</p>${eleitos.length?`<div class="list">${eleitos.map(p=>personRow(p)).join("")}</div>`:""}</section>
   ${sec.eleitos&&sec.eleitos.length?`<section class="office-group"><h3>Eleitos em 2026</h3><p class="muted" style="font-size:.9rem">Tomam posse em ${polEsf==="federal"?"5":"6"} de janeiro de 2027.</p><div class="list">${sec.eleitos.map(p=>personRow(p)).join("")}</div></section>`:""}
-  <section class="office-group"><h3>${polEsf==="federal"?"Ministérios":"Secretarias"}</h3><p class="muted" style="font-size:.9rem">Informados e conferidos por moradores. Toque em um cargo vazio para informar quem ocupa.</p><div class="list">${secs.map(p=>personRow(p)).join("")}</div></section>
+  <section class="office-group"><h3>${polEsf==="federal"?"Ministérios":"Secretarias"}</h3><p class="muted" style="font-size:.9rem">Informados e conferidos por moradores. Toque em um cargo vazio para informar quem ocupa.</p><button class="btn small" id="comoContrib" style="align-self:flex-start">Como contribuir com dados</button><div class="list">${secs.map(p=>personRow(p)).join("")}</div></section>
   <section class="office-group"><h3>Legislativo</h3><p class="muted" style="font-size:.9rem">${leg[polEsf]}</p>${sec.leg.length?`<div class="list">${sec.leg.map(p=>personRow(p)).join("")}</div>`:`<p class="muted">Dados ainda não carregados.</p>`}</section>
   <section class="stack"><h2>Órgãos e problemas desta esfera</h2><div class="tbl-wrap"><table><thead><tr><th>Problema</th><th>Órgão</th></tr></thead><tbody>${CATS.filter(c=>c.e===polEsf).map(c=>`<tr><td>${esc(c.n)}</td><td>${esc(c.org)}</td></tr>`).join("")}</tbody></table></div></section>
   ${REGRAS_HTML}
@@ -1236,6 +1285,7 @@ function viewPolitica(){
 function bindPolitica(){
   document.querySelectorAll("[data-esf]").forEach(b=>b.onclick=()=>{polEsf=b.dataset.esf;render()});
   const f=$("#polFila");if(f)f.onclick=openFila; bindPeople();
+  const cc=$("#comoContrib");if(cc)cc.onclick=openComoContribuir;
 }
 function personRow(p,papel){
   if(p.grupo)return `<button class="item-btn person" data-pid="${p.id}"><span class="avatar grp">${p.lista.length}</span><span class="grow"><b>${esc(p.nome)}</b><br><span class="muted" style="font-size:.86rem">${esc(p.cargo)}${papel?" · "+esc(papel):""}</span></span></button>`;
@@ -1475,7 +1525,12 @@ const TRILHAS = [
    <p>A <b>ação popular</b> (Constituição, art. 5º, LXXIII) permite que qualquer cidadão vá à Justiça para anular ato lesivo ao patrimônio público, ao meio ambiente ou à moralidade administrativa, sem pagar custas, salvo má-fé.</p>
    <p>Quem não pode pagar advogado conta com a <b>Defensoria Pública</b>.</p>`,
    qs:[{q:"Quem pode propor ação popular?",o:["Só partidos","Qualquer cidadão","Só o Ministério Público"],a:1,e:"Qualquer cidadão com título de eleitor é parte legítima."},
-       {q:"Um esgoto a céu aberto ameaça um bairro e a prefeitura ignora as queixas. Um bom caminho é...",o:["Desistir","Representar ao Ministério Público","Votar em branco"],a:1,e:"Problemas coletivos e omissão persistente são casos típicos para o Ministério Público."}]}
+       {q:"Um esgoto a céu aberto ameaça um bairro e a prefeitura ignora as queixas. Um bom caminho é...",o:["Desistir","Representar ao Ministério Público","Votar em branco"],a:1,e:"Problemas coletivos e omissão persistente são casos típicos para o Ministério Público."}]},
+  {id:"t3a6",t:"Onde encontrar dados oficiais",min:4,html:`<p>Quase tudo o que o poder público decide precisa ser publicado. Nomeações, exonerações, contratos e leis saem no <b>Diário Oficial</b>: o do município, o do estado ou o da União, no site in.gov.br. Muitas cidades pequenas publicam no diário da associação de municípios do seu estado.</p>
+   <p>O <b>Portal da Transparência</b> de cada governo mostra servidores, salários, despesas e contratos. A <b>Carta de Serviços ao Usuário</b>, obrigatória pela Lei 13.460/2017, lista os canais de atendimento de cada órgão.</p>
+   <p>Para que outras pessoas confiram, o que vale é o <b>link</b> da página ou do PDF, com a data da edição e a página. Um arquivo recebido por mensagem, sem link, não pode ser conferido por ninguém.</p>`,
+   qs:[{q:"Onde fica a prova mais forte de que alguém foi nomeado secretário?",o:["Numa notícia de jornal","No Diário Oficial, no ato de nomeação","Numa postagem em rede social"],a:1,e:"A nomeação só vale quando publicada no Diário Oficial."},
+       {q:"Recebi o PDF do diário oficial por WhatsApp. O que enviar ao app?",o:["O arquivo, sem link","O link da mesma edição no site do diário oficial, com a página","Só o nome da pessoa"],a:1,e:"O link permite que qualquer pessoa abra o mesmo documento e confira."}]}
  ]},
  {id:"t4",n:"Eleições e partidos",d:"Como o voto vira mandato, e como acompanhar quem foi eleito.",aulas:[
   {id:"t4a1",t:"Majoritário e proporcional",min:5,html:`<p><b>Sistema majoritário</b> para prefeito, governador, presidente e senador: vence quem tem mais votos. Há segundo turno para governador, presidente e prefeito de cidades com mais de 200 mil eleitores, se ninguém tiver maioria absoluta.</p>
