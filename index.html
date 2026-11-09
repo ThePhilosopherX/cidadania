@@ -284,6 +284,11 @@ details.acc .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10p
 .aud-date{flex:none;width:46px;border-radius:8px;background:var(--sunk);display:flex;flex-direction:column;align-items:center;padding:6px 0;line-height:1}
 .aud-date b{font:850 1.3rem var(--f-display);font-stretch:80%}
 .aud-date span{font:700 .64rem var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.landing h1{font-size:2.3rem;max-width:18ch}
+.landing .lead{font-size:1.08rem;max-width:52ch}
+.landing .gate .wrap,.gate.landing .wrap{max-width:640px}
+.feat{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;font-size:.88rem}
+.feat b{font-family:var(--f-display);font-stretch:85%;font-size:1rem}
 </style>
 
 <div id="app"></div>
@@ -349,7 +354,7 @@ function protocolo(r){return `CID-${new Date(r.criado).getFullYear()}-${(r.uf||"
 
 /* ---------- estado ---------- */
 const S = {
-  perfil: lsGet("cid.perfil",null),
+  perfil: lsGet("cid.perfil",null)||(lsGet("cid.visitante",false)?{nome:"",email:"",convidado:true}:null),
   tutorialVisto: lsGet("cid.tut",false),
   cidade: lsGet("cid.cidade",null),
   reclamacoes: [], mural: [], propostas: [], apoios: [], diretorio: {}, cidadesMundo: [], contribs: [], cvotos: [], atestados: [],
@@ -537,24 +542,100 @@ window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0)});
 function render(){
   const app=$("#app");
   const active=document.activeElement; const focusId=active&&active.id; const selStart=active&&active.selectionStart;
-  if(!S.perfil){app.innerHTML=viewLogin();bindLogin();return}
-  if(!S.tutorialVisto){app.innerHTML=viewTutorial();bindTutorial();return}
+  if(!S.perfil){app.innerHTML=viewLanding();bindLanding();return}
+  if(!S.tutorialVisto&&!visitante()){app.innerHTML=viewTutorial();bindTutorial();return}
   if(!S.cidade){app.innerHTML=viewCidadeGate();bindCidade($("#app"),true);return}
   const r=route();
   app.innerHTML=`
   <header class="top"><div class="wrap">
     <a class="brand" href="#inicio"><span class="brand-mark" aria-hidden="true"></span>Cidadania</a>
-    <button class="city-btn" id="cityBtn" aria-label="Trocar cidade"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 21s-7-6.5-7-12a7 7 0 0114 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>${esc(cidadeNome())}</span></button>
+    ${visitante()?`<button class="btn small primary" id="hdEntrar" style="margin-left:auto;flex:none">Entrar</button>`:""}
+    <button class="city-btn" id="cityBtn" aria-label="Trocar cidade" ${visitante()?'style="margin-left:0"':""}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 21s-7-6.5-7-12a7 7 0 0114 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>${esc(cidadeNome())}</span></button>
   </div></header>
   <main><div class="wrap"><div class="view" id="view">${({inicio:viewInicio,relatar:viewRelatar,politica:viewPolitica,propostas:viewPropostas,aprender:viewAprender,perfil:viewPerfil})[r]()}</div></div></main>
   <nav class="tabs" aria-label="Seções"><div class="wrap">${TABS.map(t=>`<a href="#${t.id}" class="${t.report?"report":""}" ${t.id===r?'aria-current="page"':""}>${t.report?`<span class="plus"><svg viewBox="0 0 24 24">${t.ico}</svg></span>`:`<svg viewBox="0 0 24 24">${t.ico}</svg>`}${t.n}</a>`).join("")}</div></nav>`;
   $("#cityBtn").onclick=openCidadeSheet;
+  const he=$("#hdEntrar");if(he)he.onclick=()=>openLoginSheet("entrar",()=>render());
   ({inicio:bindInicio,relatar:bindRelatar,politica:bindPolitica,propostas:bindPropostas,aprender:bindAprender,perfil:bindPerfil})[r]();
   clearTimeout(window.__bt);window.__bt=setTimeout(checkBadges,500);
   if(focusId){const el=document.getElementById(focusId);if(el){el.focus();try{if(selStart!=null)el.setSelectionRange(selStart,selStart)}catch(e){}}}
 }
 
 /* ---------- login ---------- */
+/* ---------- ENTRADA: apresenta o app antes de pedir qualquer dado ---------- */
+const CATS_VITRINE=["buraco","iluminacao","lixo","transporte","ubs","drenagem","seguranca","saneamento"];
+function viewLanding(){
+  return `<div class="gate landing"><div class="wrap">
+    <div class="row"><span class="brand"><span class="brand-mark" aria-hidden="true"></span>Cidadania</span><button class="btn ghost small" id="lnEntrar" style="margin-left:auto">Entrar</button></div>
+    <section class="stack" style="gap:14px">
+      <h1>Cobre quem é responsável pelo que está errado na sua cidade.</h1>
+      <p class="lead">O Cidadania mostra qual órgão resolve cada problema, prepara a reclamação com o prazo legal de resposta e acompanha até ser resolvido. Gratuito, sem anúncios, para os 5.570 municípios do Brasil.</p>
+    </section>
+    <section class="card stack">
+      <label class="f" style="font-size:1rem">Comece pela sua cidade<input type="search" id="cityQ" placeholder="Digite o nome da cidade" autocomplete="off"></label>
+      <div class="list" id="cityRes"></div>
+      <p class="muted" style="font-size:.84rem">Não precisa de cadastro para conhecer. Você só cria a conta quando quiser enviar uma reclamação ou participar.</p>
+    </section>
+    <section class="stack"><h2>O que você pode relatar</h2>
+      <div class="cat-grid">${CATS_VITRINE.map(k=>{const c=CAT[k];return `<button data-lcat="${k}"><span class="esf ${c.e}" data-l="${ESF[c.e].l}">${ESF[c.e].n}</span>${esc(c.n)}<span class="muted" style="font-weight:400;font-size:.78rem">${esc(c.org)}</span></button>`}).join("")}</div>
+      <p class="muted" style="font-size:.86rem">E mais ${CATS.length-CATS_VITRINE.length} tipos, de INSS a desmatamento. Para cada um, o app explica por que o problema é da prefeitura, do estado ou da União.</p>
+    </section>
+    <section class="stack"><h2>Como funciona</h2>
+      <ol class="flow">
+        <li><div><b>Relate com foto ou vídeo</b><br><span class="muted">Descreva o problema e onde ele está: rua, bairro, ponto de referência.</span></div></li>
+        <li><div><b>Descubra quem resolve</b><br><span class="muted">O app indica o órgão responsável e os nomes reais de quem governa e fiscaliza, a partir dos dados do TSE, da Câmara e do Senado.</span></div></li>
+        <li><div><b>Cobre e acompanhe</b><br><span class="muted">A mensagem sai pronta, identificada ou anônima, para o e-mail do órgão ou a central da cidade. O app conta o prazo legal e ajuda a escalar se não houver resposta.</span></div></li>
+      </ol>
+    </section>
+    <section class="stack"><span class="eyebrow">Exemplo de cobrança acompanhada no app</span>
+      <div class="list"><div class="item-btn" style="cursor:default"><span class="grow stack" style="gap:4px"><b>Buraco grande na Rua São José, em frente ao nº 120</b><span class="row" style="gap:6px"><span class="esf municipal" data-l="M">Municipal</span><span class="pill s-enviada"><i></i>Aguardando · 18 d</span></span><span class="muted" style="font-size:.86rem">Secretaria Municipal de Obras e Infraestrutura · prazo de 30 dias pela Lei 13.460/2017</span></span></div></div>
+    </section>
+    <section class="stack"><h2>Mais que reclamar</h2>
+      <div class="quick" style="grid-template-columns:repeat(2,1fr)">
+        <div class="feat"><b>Mural do bairro</b><span class="muted">Veja o que os vizinhos relataram e apoie quem tem o mesmo problema.</span></div>
+        <div class="feat"><b>Seus representantes</b><span class="muted">Prefeito, vereadores, deputados e senadores, com projetos, votos e contato.</span></div>
+        <div class="feat"><b>Audiências públicas</b><span class="muted">Datas, como participar e como pedir uma audiência sobre o seu problema.</span></div>
+        <div class="feat"><b>Escola Cívica</b><span class="muted">Aulas curtas sobre como a política chega à sua rua, com badges.</span></div>
+      </div>
+    </section>
+    <section class="card stack" style="gap:8px"><h3>Por que confiar</h3>
+      <p style="font-size:.92rem"><b>Dados oficiais.</b> Eleitos, partidos, projetos e votações vêm do TSE, da Câmara dos Deputados e do Senado Federal, atualizados todo dia.</p>
+      <p style="font-size:.92rem"><b>Seus dados ficam com você.</b> Nome, CPF e cobranças ficam guardados no seu aparelho. O mural público nunca mostra quem relatou.</p>
+      <p style="font-size:.92rem"><b>Aberto.</b> Gratuito, sem anúncios e com código aberto: qualquer pessoa pode conferir como o app funciona no <a href="https://github.com/ThePhilosopherX/cidadania" target="_blank" rel="noopener">GitHub</a>.</p>
+    </section>
+    <div class="stack"><button class="btn primary block" id="lnExplorar">Explorar sem cadastro</button><button class="btn block" id="lnConta">Criar conta com e-mail</button></div>
+  </div></div>`;
+}
+function entrarComoVisitante(){S.perfil={nome:"",email:"",convidado:true};lsSet("cid.visitante",true)}
+function bindLanding(){
+  bindCidade($("#app"),"landing");
+  $("#lnExplorar").onclick=()=>{entrarComoVisitante();render();if(!S.cidade)setTimeout(()=>{const q=$("#cityQ");if(q)q.focus()},50)};
+  $("#lnConta").onclick=()=>openLoginSheet("criar sua conta",()=>render());
+  $("#lnEntrar").onclick=()=>openLoginSheet("entrar",()=>render());
+  document.querySelectorAll("[data-lcat]").forEach(b=>b.onclick=()=>{entrarComoVisitante();S.draft=novoDraft();S.draft.cat=b.dataset.lcat;S.draft.catAuto=false;location.hash="relatar";render()});
+}
+function openLoginSheet(motivo,depois){
+  const sug=S.perfilSugestao||{};
+  openSheet(motivo==="entrar"?"Entrar":"Criar conta",`<p class="muted">${motivo==="entrar"||motivo==="criar sua conta"?"Com a conta, você envia cobranças, acompanha prazos, apoia vizinhos e propõe leis.":`Para ${esc(motivo)}, crie sua conta. Leva 10 segundos.`}</p>
+    <form id="fLogin" class="stack" novalidate>
+      <label class="f">Nome<input type="text" id="lgNome" autocomplete="name" value="${esc(sug.nome||"")}" required></label>
+      <label class="f">E-mail<input type="email" id="lgEmail" autocomplete="email" value="${esc(sug.email||"")}" required></label>
+      <p class="muted" id="lgErr" role="alert" hidden></p>
+      <button class="btn primary block" type="submit">Continuar</button>
+    </form>
+    <p class="muted" style="font-size:.84rem">Seu nome e e-mail ficam guardados no seu aparelho e só entram nas mensagens que você decidir enviar identificado(a).</p>`,el=>{
+      $("#fLogin",el).onsubmit=async e=>{e.preventDefault();const nome=$("#lgNome",el).value.trim(),email=$("#lgEmail",el).value.trim();
+        if(!nome||!/^\S+@\S+\.\S+$/.test(email)){const er=$("#lgErr",el);er.hidden=false;er.textContent="Preencha seu nome e um e-mail válido, como nome@exemplo.com.";return}
+        const eraVisitante=visitante();
+        await Store.savePerfil({nome,email,via:"email",desde:Date.now()});try{localStorage.removeItem("cid.visitante")}catch(x){}
+        if(eraVisitante){S.tutorialVisto=true;lsSet("cid.tut",true)}
+        closeSheet();toast("Conta criada. Bem-vindo(a)!");if(depois)depois()};
+      setTimeout(()=>{const n=$("#lgNome",el);if(n)n.focus()},60);
+    });
+}
+const visitante=()=>!!(S.perfil&&S.perfil.convidado);
+function exigeConta(motivo,acao){if(!visitante())return acao();openLoginSheet(motivo,()=>{render();acao()})}
+
 function viewLogin(){
   const sug=S.perfilSugestao||{};
   return `<div class="gate"><div class="wrap">
@@ -622,10 +703,10 @@ function bindCidade(root,gate){
     if(v.length>=2){list=[...world.filter(c=>norm(c.nome+" "+c.pais).includes(v)),...CITIES.filter(c=>norm(c.nome).startsWith(v)),...CITIES.filter(c=>!norm(c.nome).startsWith(v)&&norm(c.nome).includes(v))].slice(0,12)}
     else list=[{nome:"Rio de Janeiro",uf:"RJ"},{nome:"São Paulo",uf:"SP"},{nome:"Belo Horizonte",uf:"MG"},{nome:"Ouro Preto",uf:"MG"},{nome:"Salvador",uf:"BA"},{nome:"Recife",uf:"PE"}];
     res.innerHTML=list.length?list.map((c,i)=>`<button class="item-btn" data-i="${i}"><span class="grow"><b>${esc(c.nome)}</b> <span class="muted">${esc(c.pais?`${c.uf?c.uf+", ":""}${c.pais}`:UFS[c.uf]||c.uf)}</span></span></button>`).join(""):`<p class="muted">Nenhuma cidade com esse nome. Confira a grafia ou adicione abaixo, se for fora do Brasil.</p>`;
-    res.querySelectorAll("button").forEach(b=>b.onclick=()=>{const c=list[+b.dataset.i];S.cidade=c;lsSet("cid.cidade",c);Dados.loadMun(c.uf);if(!gate)closeSheet();toast("Cidade: "+cidadeNome());render()});
+    res.querySelectorAll("button").forEach(b=>b.onclick=()=>{const c=list[+b.dataset.i];S.cidade=c;lsSet("cid.cidade",c);Dados.loadMun(c.uf);if(gate==="landing"&&!S.perfil)entrarComoVisitante();if(!gate)closeSheet();toast("Cidade: "+cidadeNome());render()});
   };
   q.oninput=show; show(); if(!gate)setTimeout(()=>q.focus(),50);
-  $("#fMundo",root).onsubmit=async e=>{e.preventDefault();const nome=$("#mdNome",root).value.trim(),pais=$("#mdPais",root).value.trim(),regiao=$("#mdReg",root).value.trim();
+  const fm=$("#fMundo",root); if(fm)fm.onsubmit=async e=>{e.preventDefault();const nome=$("#mdNome",root).value.trim(),pais=$("#mdPais",root).value.trim(),regiao=$("#mdReg",root).value.trim();
     if(!nome||!pais)return; if(norm(pais)==="brasil"){toast("Cidades brasileiras já estão na lista");return}
     const id="w_"+hash(norm(nome+pais)); await Store.put("cidades_mundo","cidadesMundo",id,{nome,pais,regiao,criado:Date.now()});
     S.cidade={nome,uf:regiao,pais};lsSet("cid.cidade",S.cidade);if(!gate)closeSheet();render()};
@@ -781,11 +862,11 @@ function dica(){return DICAS[new Date().getDate()%DICAS.length]}
 function contaApoio(id){return S.apoios.filter(a=>a.alvo===id).length}
 function apoiei(id){return S.apoios.some(a=>a.alvo===id&&a.uid===S.uid)}
 function bindApoios(root=document){
-  root.querySelectorAll("[data-apoio]").forEach(b=>b.onclick=async()=>{
+  root.querySelectorAll("[data-apoio]").forEach(b=>b.onclick=()=>exigeConta("apoiar",async()=>{
     const alvo=b.dataset.apoio; const id=`${alvo}__${S.uid}`.replace(/[\/]/g,"_");
     if(apoiei(alvo))await Store.del("apoios","apoios",id); else await Store.put("apoios","apoios",id,{alvo,uid:S.uid,em:Date.now()});
     render();
-  });
+  }));
 }
 function bindRecItems(root=document){root.querySelectorAll("[data-rec]").forEach(b=>b.onclick=()=>openRec(b.dataset.rec))}
 /* ---------- RELATAR ---------- */
@@ -872,7 +953,7 @@ function bindRelatar(){
   if(d.passo===3){
     if(d.cat){registerPeople(responsaveis(CAT[d.cat],S.cidade).map(x=>x.p));bindPeople()}
     document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{d.cat=b.dataset.cat;d.catAuto=false;render()});
-    $("#nx").onclick=()=>{d.passo=4;render()};
+    $("#nx").onclick=()=>exigeConta("enviar a cobrança",()=>{d.passo=4;render()});
     const ai=$("#aiCat"); if(ai)ai.onclick=async()=>{ai.disabled=true;const msg=$("#aiMsg");msg.textContent="Analisando…";
       try{const res=await S.sample.json(`Você classifica problemas urbanos relatados por cidadãos brasileiros. Categorias possíveis (chave: nome — esfera):\n${CATS.map(c=>`${c.k}: ${c.n} — ${c.e}`).join("\n")}\n\nRelato:\nTítulo: ${d.titulo}\nTexto: ${d.texto}\nLocal: ${d.local}\nCidade: ${cidadeNome()}\n\nResponda só com JSON {"cat":"<chave>","motivo":"<uma frase em português explicando a escolha e qualquer ressalva, por exemplo se a unidade pode ser de outra esfera>"}.`,{modelTier:"quick"});
         if(res&&CAT[res.cat]){d.cat=res.cat;d.catAuto=true;render();const m=$("#aiMsg");if(m)m.textContent="Claude: "+(res.motivo||"")}else{msg.textContent="Não houve uma resposta clara. Escolha o tipo manualmente."}}
@@ -1228,6 +1309,7 @@ function openComoContribuir(){
 }
 
 function openContrib(op){
+  if(visitante())return exigeConta("contribuir com dados",()=>openContrib(op));
   const tipo=op.campo;
   const campos=tipo==="email"?`<label class="f">E-mail oficial do órgão<input type="email" id="ctVal" value="${esc(op.valor||"")}" placeholder="ouvidoria@prefeitura.gov.br"></label>`
     :tipo==="audiencia"?`<label class="f">Tema<input type="text" id="ctVal" maxlength="160" placeholder="Ex.: Situação das encostas do Morro da Queimada"></label><div class="grid2"><label class="f">Data<input type="date" id="ctData"></label><label class="f">Hora<input type="time" id="ctHora"></label></div><label class="f">Comissão ou órgão que convoca<input type="text" id="ctOrg" placeholder="Ex.: Comissão de Obras da Câmara Municipal"></label><label class="f">Local<input type="text" id="ctLocal" placeholder="Ex.: Plenário da Câmara, Rua ..."></label><label class="f">Como participar<input type="text" id="ctPart" maxlength="200" placeholder="Ex.: aberta ao público; inscrição para fala no local; transmissão no YouTube"></label><label class="f">Link de inscrição ou transmissão (opcional)<input type="text" inputmode="url" id="ctUrl"></label>`
@@ -1301,7 +1383,7 @@ function openRevisar(cid){
       <form id="rvMotivoF" class="stack" hidden><label class="f">O que está errado?<input type="text" id="rvMotivo" maxlength="200" placeholder="Ex.: a fonte mostra outro nome; exonerado em 10/2026"></label><button class="btn" type="submit">Enviar contestação</button><p class="muted" id="rvErr" role="alert" hidden></p></form>`}
     ${isCurador(S.uid)&&!proprio?`<button class="btn small" id="rvCur">Retirar (curadoria)</button>`:""}`,el=>{
       const vid=`${cid}__${S.uid}`;
-      const votar=async(v,motivo)=>{await Store.put("cvoto","cvotos",vid,{c:cid,v,motivo:motivo||"",uid:S.uid,em:Date.now()});closeSheet();toast(v>0?"Conferência registrada":"Contestação registrada");render()};
+      const votar=async(v,motivo)=>{if(visitante()){closeSheet();return exigeConta("conferir dados",()=>openRevisar(cid))}await Store.put("cvoto","cvotos",vid,{c:cid,v,motivo:motivo||"",uid:S.uid,em:Date.now()});closeSheet();toast(v>0?"Conferência registrada":"Contestação registrada");render()};
       const s=$("#rvSim",el);if(s)s.onclick=()=>votar(1);
       const n=$("#rvNao",el);if(n)n.onclick=()=>{$("#rvMotivoF",el).hidden=false;$("#rvMotivo",el).focus()};
       const f=$("#rvMotivoF",el);if(f)f.onsubmit=e=>{e.preventDefault();const m=$("#rvMotivo",el).value.trim();if(m.length<8){const er=$("#rvErr",el);er.hidden=false;er.textContent="Explique em poucas palavras o que está errado.";return}votar(-1,m)};
@@ -1532,7 +1614,7 @@ function propItem(p){
 function bindPropostas(){
   document.querySelectorAll("[data-pf]").forEach(b=>b.onclick=()=>{propFiltro=b.dataset.pf;render()});
   bindApoios(); document.querySelectorAll("[data-prop]").forEach(b=>b.onclick=()=>openProp(b.dataset.prop));
-  $("#newProp").onclick=()=>openSheet("Sugerir projeto de lei",`
+  $("#newProp").onclick=()=>exigeConta("sugerir um projeto de lei",()=>openSheet("Sugerir projeto de lei",`
     <form id="fProp" class="stack">
       <label class="f">Título<input type="text" id="ppTit" maxlength="100" placeholder="Ex.: Lei da Calçada Acessível"></label>
       <label class="f">Ementa <small>Uma frase com o que a lei faz.</small><textarea id="ppEme" style="min-height:70px" placeholder="Obriga a prefeitura a publicar, a cada ano, um plano de recuperação de calçadas com prioridade para rotas de escolas e hospitais."></textarea></label>
@@ -1552,7 +1634,7 @@ function bindPropostas(){
         await Store.put("propostas","propostas",id,{titulo,ementa,just,esfera,cidade:S.cidade.nome,uf:S.cidade.uf||"",autor:S.uid,autorNome:(S.perfil.nome||"").split(" ")[0],criado:Date.now()});
         await Store.put("apoios","apoios",`${id}__${S.uid}`,{alvo:id,uid:S.uid,em:Date.now()});
         closeSheet();render();toast("Proposta publicada")};
-    });
+    }));
 }
 function openProp(id){
   const p=S.propostas.find(x=>x.id===id); if(!p)return; const n=contaApoio(id);
@@ -1571,7 +1653,7 @@ function openProp(id){
     <div class="why"><b>E se a Câmara não quiser?</b> A iniciativa popular permite protocolar o projeto diretamente: no município, com assinaturas de 5% do eleitorado; no Congresso, com 1% do eleitorado nacional, distribuído por pelo menos 5 estados e com no mínimo 0,3% dos eleitores de cada um.</div>
     ${Dados.disp?"":`<p class="muted" style="font-size:.82rem"><span class="pill demo">Demonstração</span> Parlamentares fictícios neste modo.</p>`}`,el=>{
       $("#shr",el).onclick=()=>copyText(share); $("#ofiC",el).onclick=()=>copyText(ofi,$("#ofi",el)); bindPeople(el);
-      el.querySelectorAll("[data-apoio]").forEach(b=>b.onclick=async()=>{const sid=`${id}__${S.uid}`;if(apoiei(id))await Store.del("apoios","apoios",sid);else await Store.put("apoios","apoios",sid,{alvo:id,uid:S.uid,em:Date.now()});closeSheet();render();openProp(id)});
+      el.querySelectorAll("[data-apoio]").forEach(b=>b.onclick=async()=>{if(visitante()){closeSheet();return exigeConta("apoiar",()=>openProp(id))}const sid=`${id}__${S.uid}`;if(apoiei(id))await Store.del("apoios","apoios",sid);else await Store.put("apoios","apoios",sid,{alvo:id,uid:S.uid,em:Date.now()});closeSheet();render();openProp(id)});
     });
 }
 
@@ -1866,6 +1948,10 @@ function bindBadges(){document.querySelectorAll("[data-badge]").forEach(x=>x.onc
 /* ---------- PERFIL ---------- */
 let perfFiltro="todas";
 function viewPerfil(){
+  if(visitante())return `<div class="stack"><span class="eyebrow">Perfil</span><h1>Crie sua conta para participar</h1><p class="muted">Você pode explorar o app à vontade. Com a conta, você também envia cobranças com prazo, guarda o histórico de respostas, apoia relatos dos vizinhos, propõe leis e confere dados.</p></div>
+  <button class="btn primary" id="pfCriar">Criar conta com e-mail</button>
+  ${levelCard()}${badgesSection()}
+  <p class="muted" style="font-size:.86rem">Seu progresso nas aulas já fica guardado neste aparelho e continua depois que você criar a conta.</p>`;
   const p=S.perfil; const all=S.reclamacoes;
   const cnt=k=>all.filter(r=>statusOf(r).k===k).length;
   let list=all; if(perfFiltro!=="todas")list=all.filter(r=>statusOf(r).k===perfFiltro);
@@ -1891,6 +1977,7 @@ function viewPerfil(){
   <div id="sairConf" hidden class="notice"><span class="grow">${S.online?"Sair apaga os dados deste aparelho. Suas cobranças continuam guardadas na sua conta.":"Sair apaga deste aparelho o perfil e todas as cobranças. Não dá para desfazer."}</span><button class="btn small" id="sairYes">Sair</button></div>`;
 }
 function bindPerfil(){
+  if(visitante()){$("#pfCriar").onclick=()=>openLoginSheet("criar sua conta",()=>render());bindBadges();return}
   document.querySelectorAll("[data-pf2]").forEach(b=>b.onclick=()=>{perfFiltro=b.dataset.pf2;render()});
   bindRecItems(); bindBadges(); bindRede();
   $("#pfCpf").oninput=e=>{e.target.value=maskCpf(e.target.value)};
