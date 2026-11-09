@@ -429,13 +429,14 @@ const Store = {
       S.apoios=lsGet("cid.apoios",[]); S.diretorio=lsGet("cid.dir",{}); S.cidadesMundo=lsGet("cid.mundo",[]); S.contribs=lsGet("cid.contrib",[]); S.cvotos=lsGet("cid.cvoto",[]); S.atestados=lsGet("cid.atesta",[]);
     }
   },
-  async savePerfil(p){S.perfil=p;lsSet("cid.perfil",p);if(this.db){try{await this.db.doc(this.priv()+"/perfil").set({dados:p})}catch(e){toast("Não foi possível salvar o perfil no servidor; ficou neste aparelho.")}}},
+  async savePerfil(p){S.perfil=p;lsSet("cid.perfil",p);Contas.salvar();if(this.db){try{await this.db.doc(this.priv()+"/perfil").set({dados:p})}catch(e){toast("Não foi possível salvar o perfil no servidor; ficou neste aparelho.")}}},
   async saveRec(r){
     const i=S.reclamacoes.findIndex(x=>x.id===r.id); if(i>=0)S.reclamacoes[i]=r; else S.reclamacoes.unshift(r);
     if(this.db){try{await this.db.doc(this.priv()+"/"+r.id).set(r)}catch(e){toast("Falha ao salvar no servidor: "+(e.message||e.code))}}
     else lsSet("cid.rec",S.reclamacoes);
+    Contas.salvar();
   },
-  async delRec(id){S.reclamacoes=S.reclamacoes.filter(x=>x.id!==id);if(this.db){try{await this.db.doc(this.priv()+"/"+id).delete()}catch(e){}}else lsSet("cid.rec",S.reclamacoes)},
+  async delRec(id){S.reclamacoes=S.reclamacoes.filter(x=>x.id!==id);if(this.db){try{await this.db.doc(this.priv()+"/"+id).delete()}catch(e){}}else lsSet("cid.rec",S.reclamacoes);Contas.salvar()},
   async put(col,key,id,data){
     const arr=S[key]; const i=arr.findIndex(x=>x.id===id); const doc={id,...data}; if(i>=0)arr[i]=doc; else arr.push(doc);
     if(this.db){try{await this.db.doc(col+"/"+id).set(data)}catch(e){toast("Não foi possível publicar: "+(e.message||e.code));}}
@@ -605,6 +606,47 @@ const ILU_CIDADE=`<svg class="ilu" viewBox="0 0 520 300" role="img" aria-label="
 <g><circle cx="60" cy="196" r="10" fill="var(--est)"/><rect x="50" y="206" width="20" height="16" rx="6" fill="var(--est)"/><circle cx="88" cy="194" r="10" fill="var(--fed)"/><rect x="78" y="204" width="20" height="18" rx="6" fill="var(--fed)"/></g>
 <g><rect x="46" y="128" width="104" height="44" rx="12" fill="var(--surface)" stroke="var(--line)"/><path d="M70 172l-8 14 18-14z" fill="var(--surface)"/><path d="M64 150l8 8 16-18" stroke="var(--ok)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="96" y="142" width="44" height="6" rx="3" fill="var(--line)"/><rect x="96" y="154" width="32" height="6" rx="3" fill="var(--line)"/></g>
 </svg>`;
+/* ---------- CONTAS NESTE APARELHO: cada e-mail guarda seu perfil, cobranças e progresso ---------- */
+const PROG_VAZIO=()=>({aulas:{},dias:[],escalou:{},acertos1:0,vistos:[]});
+const Contas={
+  chave:e=>"cid.conta:"+norm(e).trim(),
+  salvar(){const p=S.perfil;if(!p||p.convidado||!p.email)return;lsSet(this.chave(p.email),{perfil:p,rec:S.online?[]:S.reclamacoes,prog:typeof Prog!=="undefined"?Prog.d:null,em:Date.now()})},
+  ler(email){return lsGet(this.chave(email),null)||lsGet("cid.guardado:"+norm(email).trim(),null)},
+  apagar(email){try{localStorage.removeItem(this.chave(email));localStorage.removeItem("cid.guardado:"+norm(email).trim())}catch(e){}},
+  lista(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("cid.conta:")){const c=lsGet(k,null);if(c&&c.perfil)out.push(c.perfil)}}}catch(e){}return out}
+};
+function juntaRecs(a,b){const m=new Map();for(const r of [...(a||[]),...(b||[])])if(r&&r.id&&!m.has(r.id))m.set(r.id,r);return [...m.values()].sort((x,y)=>(y.criado||0)-(x.criado||0))}
+function juntaProg(a,b){a=a||PROG_VAZIO();b=b||PROG_VAZIO();return {aulas:{...b.aulas,...a.aulas},dias:[...new Set([...(a.dias||[]),...(b.dias||[])])],escalou:{...b.escalou,...a.escalou},acertos1:Math.max(a.acertos1||0,b.acertos1||0),vistos:[...new Set([...(a.vistos||[]),...(b.vistos||[])])]}}
+async function entrarComEmail(nome,email){
+  const eraVisitante=visitante(); const atual=S.perfil&&!S.perfil.convidado?S.perfil:null;
+  if(atual&&norm(atual.email)===norm(email))return {voltou:true};
+  if(atual)Contas.salvar();
+  const c=Contas.ler(email); const progVisitante=eraVisitante?Prog.d:null;
+  if(c){
+    if(!S.online){S.reclamacoes=c.rec||[];lsSet("cid.rec",S.reclamacoes)}
+    Prog.d=juntaProg(c.prog,progVisitante);
+    await Store.savePerfil({...c.perfil,nome:nome||c.perfil.nome,email});
+  } else {
+    if(atual&&!S.online){S.reclamacoes=[];lsSet("cid.rec",[])}
+    Prog.d=eraVisitante?Prog.d:PROG_VAZIO();
+    await Store.savePerfil({nome,email,via:"email",desde:Date.now()});
+  }
+  lsSet("cid.prog",Prog.d); S.tutorialVisto=true; lsSet("cid.tut",true);
+  try{localStorage.removeItem("cid.visitante");localStorage.removeItem("cid.guardado:"+norm(email).trim())}catch(x){}
+  Contas.salvar();
+  return {voltou:!!c};
+}
+/* Recupera dados de uma conta guardada com o mesmo e-mail da conta ativa (caso de quem entrou de novo antes desta correção). */
+function juntaContaGuardada(){
+  const p=S.perfil; if(!p||p.convidado||!p.email)return;
+  const g=lsGet("cid.guardado:"+norm(p.email).trim(),null); if(!g)return;
+  if(!S.online){S.reclamacoes=juntaRecs(S.reclamacoes,g.rec);lsSet("cid.rec",S.reclamacoes)}
+  Prog.d=juntaProg(Prog.d,g.prog); lsSet("cid.prog",Prog.d);
+  if(g.perfil&&g.perfil.desde&&(!p.desde||g.perfil.desde<p.desde))S.perfil={...g.perfil,...p,desde:g.perfil.desde};
+  lsSet("cid.perfil",S.perfil);
+  try{localStorage.removeItem("cid.guardado:"+norm(p.email).trim())}catch(e){}
+  Contas.salvar();
+}
 const LS={texto:"",cidade:null,bairro:"",rua:"",nome:"",email:"",cat:null,foto:null};
 function guardaLS(){const g=id=>{const e=$("#"+id);return e?e.value:undefined};const t=g("qrTexto");if(t!==undefined)LS.texto=t;const b=g("qrBairro");if(b!==undefined)LS.bairro=b;const r=g("qrRua");if(r!==undefined)LS.rua=r;const n=g("qrNome");if(n!==undefined)LS.nome=n;const m=g("qrEmail");if(m!==undefined)LS.email=m}
 function viewLanding(){
@@ -670,7 +712,7 @@ function bindLanding(){
     if(!LS.cidade)return show("Escolha a cidade na lista.");
     const nome=LS.nome.trim(),email=LS.email.trim(); if((nome||email)&&(!nome||!/^\S+@\S+\.\S+$/.test(email)))return show("Para se identificar, preencha nome e um e-mail válido. Ou deixe os dois em branco.");
     S.cidade=LS.cidade;lsSet("cid.cidade",S.cidade);Dados.loadMun(S.cidade.uf);
-    if(nome){await Store.savePerfil({nome,email,via:"email",desde:Date.now()});S.tutorialVisto=true;lsSet("cid.tut",true)} else entrarComoVisitante();
+    if(nome){const r=await entrarComEmail(nome,email);if(r.voltou)toast(`Bem-vindo(a) de volta, ${(S.perfil.nome||"").split(" ")[0]}!`)} else entrarComoVisitante();
     const d=novoDraft(); const primeira=texto.split(/(?<=[.!?])\s/)[0];
     Object.assign(d,{titulo:primeira.length>90?primeira.slice(0,87)+"…":primeira,texto,bairro:limpaRegiao(LS.bairro),rua:limpaRegiao(LS.rua),midia:LS.foto?[LS.foto]:[]});
     d.cat=LS.cat||classify(texto+" "+LS.rua); d.catAuto=!LS.cat; d.passo=3; S.draft=d;
@@ -683,20 +725,19 @@ function bindLanding(){
 function openLoginSheet(motivo,depois){
   const sug=S.perfilSugestao||{};
   openSheet(motivo==="entrar"?"Entrar":"Criar conta",`<p class="muted">${motivo==="entrar"||motivo==="criar sua conta"?"Com a conta, você envia cobranças, acompanha prazos, apoia vizinhos e propõe leis.":`Para ${esc(motivo)}, crie sua conta. Leva 10 segundos.`}</p>
+    ${Contas.lista().length?`<div class="stack" style="gap:6px"><span class="eyebrow">Contas neste aparelho</span><div class="list">${Contas.lista().map(c=>`<button class="item-btn" data-conta="${esc(norm(c.email))}"><span class="avatar" style="background:var(--accent);color:var(--accent-ink);width:36px;height:36px;font-size:.8rem">${esc((c.nome||"?").split(" ").map(x=>x[0]).slice(0,2).join(""))}</span><span class="grow"><b>${esc(c.nome)}</b><br><span class="muted" style="font-size:.84rem">${esc(c.email)}</span></span></button>`).join("")}</div><div class="divider">ou com outro e-mail</div></div>`:""}
     <form id="fLogin" class="stack" novalidate>
       <label class="f">Nome<input type="text" id="lgNome" autocomplete="name" value="${esc(sug.nome||"")}" required></label>
       <label class="f">E-mail<input type="email" id="lgEmail" autocomplete="email" value="${esc(sug.email||"")}" required></label>
       <p class="muted" id="lgErr" role="alert" hidden></p>
       <button class="btn primary block" type="submit">Continuar</button>
     </form>
-    <p class="muted" style="font-size:.84rem">Seu nome e e-mail ficam guardados no seu aparelho e só entram nas mensagens que você decidir enviar identificado(a).</p>`,el=>{
+    <p class="muted" style="font-size:.84rem">Se você já usou este e-mail neste aparelho, suas cobranças e seu progresso voltam. Nome e e-mail ficam guardados no aparelho e só entram nas mensagens que você decidir enviar identificado(a).</p>`,el=>{
       $("#fLogin",el).onsubmit=async e=>{e.preventDefault();const nome=$("#lgNome",el).value.trim(),email=$("#lgEmail",el).value.trim();
         if(!nome||!/^\S+@\S+\.\S+$/.test(email)){const er=$("#lgErr",el);er.hidden=false;er.textContent="Preencha seu nome e um e-mail válido, como nome@exemplo.com.";return}
-        const eraVisitante=visitante(); const guard=lsGet("cid.guardado:"+norm(email),null);
-        if(guard){if(!S.online){S.reclamacoes=guard.rec||[];lsSet("cid.rec",S.reclamacoes)}Prog.d=Object.assign(Prog.d,guard.prog||{});lsSet("cid.prog",Prog.d);S.tutorialVisto=true;lsSet("cid.tut",true);try{localStorage.removeItem("cid.guardado:"+norm(email))}catch(x){}}
-        await Store.savePerfil(guard?{...guard.perfil,nome,email}:{nome,email,via:"email",desde:Date.now()});try{localStorage.removeItem("cid.visitante")}catch(x){}
-        if(eraVisitante){S.tutorialVisto=true;lsSet("cid.tut",true)}
-        closeSheet();toast("Conta criada. Bem-vindo(a)!");if(depois)depois()};
+        const r=await entrarComEmail(nome,email);
+        closeSheet();toast(r.voltou?`Bem-vindo(a) de volta, ${(S.perfil.nome||"").split(" ")[0]}!`:"Conta criada neste aparelho.");if(depois)depois()};
+      el.querySelectorAll("[data-conta]").forEach(b=>b.onclick=async()=>{const c=Contas.lista().find(x=>norm(x.email)===b.dataset.conta);if(!c)return;await entrarComEmail(c.nome,c.email);closeSheet();toast(`Bem-vindo(a) de volta, ${(c.nome||"").split(" ")[0]}!`);if(depois)depois()});
       setTimeout(()=>{const n=$("#lgNome",el);if(n)n.focus()},60);
     });
 }
@@ -1890,7 +1931,7 @@ const AULAS = {}; for (const t of TRILHAS) for (const a of t.aulas) AULAS[a.id]=
 
 const Prog = {
   d: Object.assign({aulas:{},dias:[],escalou:{},acertos1:0,vistos:[]}, lsGet("cid.prog",{})),
-  save(){lsSet("cid.prog",this.d);if(Store.db){Store.db.doc(Store.priv()+"/progresso").set({dados:this.d}).catch(()=>{})}},
+  save(){lsSet("cid.prog",this.d);Contas.salvar();if(Store.db){Store.db.doc(Store.priv()+"/progresso").set({dados:this.d}).catch(()=>{})}},
   dia(){const k=new Date().toISOString().slice(0,10);if(!this.d.dias.includes(k))this.d.dias.push(k)},
   concluir(id){if(!this.d.aulas[id]){this.d.aulas[id]=Date.now();this.dia();this.save()}}
 };
@@ -2060,8 +2101,8 @@ function openSair(){
     <button class="btn block" id="sairApagar">Sair e apagar meus dados deste aparelho</button>
     <p class="muted" style="font-size:.86rem">Use num aparelho emprestado ou compartilhado. Suas cobranças e seu perfil são apagados daqui${S.online?"; o que está na sua conta continua lá":" e não dá para desfazer"}. O que você publicou no mural continua público, sem seu nome.</p>`,el=>{
     const limpar=()=>{["cid.perfil","cid.tut","cid.rec","cid.prog","cid.visitante"].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});S.perfil=null;S.tutorialVisto=false;if(!S.online)S.reclamacoes=[];Prog.d={aulas:{},dias:[],escalou:{},acertos1:0,vistos:[]};closeSheet();location.hash="";render();toast("Você saiu da conta")};
-    $("#sairGuardar",el).onclick=()=>{const em=norm(S.perfil.email||"");if(em)lsSet("cid.guardado:"+em,{perfil:S.perfil,rec:S.online?[]:S.reclamacoes,prog:Prog.d,tut:true});limpar()};
-    $("#sairApagar",el).onclick=limpar;
+    $("#sairGuardar",el).onclick=()=>{Contas.salvar();limpar()};
+    $("#sairApagar",el).onclick=()=>{Contas.apagar(S.perfil.email||"");limpar()};
   });
 }
 function bindPerfil(){
@@ -2075,6 +2116,7 @@ function bindPerfil(){
 
 /* ---------- início ---------- */
 Store.subscribeAll();
+juntaContaGuardada(); Contas.salvar();
 if(window.claude&&claude.use){Store.init().then(render)} else Nostr.init();
 Dados.init();
 render();
