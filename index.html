@@ -1212,6 +1212,10 @@ const isCurador=pk=>Dados.curadores.includes(pk);
 const LIMITE_DIA=10, IDADE_MIN_DIAS=3;
 function idadeDias(pk){const t=Nostr.primeiro&&Nostr.primeiro[pk];if(!Nostr.ready)return 99;if(!t)return 0;return (Date.now()/1000-t)/86400}
 function atestado(pk){return S.atestados.some(a=>a.id===pk&&Dados.atestadores.includes(a._autor)&&!a.revogado)}
+/* Tipos confirmados de uma chave: só valem atestados assinados por um serviço de confirmação autorizado. */
+function confirmacoes(pk){const t={};for(const a of S.atestados){if(a.id!==pk||a.revogado||!Dados.atestadores.includes(a._autor))continue;for(const k of ["email","telefone","govbr"])if(a[k])t[k]=a[k]}return t}
+const CONF_TXT={email:"e-mail confirmado",telefone:"telefone confirmado",govbr:"conta gov.br"};
+function confirmTxt(pk){const t=confirmacoes(pk);const l=Object.keys(t).map(k=>CONF_TXT[k]+(k==="govbr"&&t[k].nivel?` (${t[k].nivel})`:""));return l.length?l.join(", "):""}
 const govbrAtivo=()=>Dados.atestadores.length>0;
 function pesoVoto(pk){if(isCurador(pk))return 3;if(govbrAtivo())return atestado(pk)?1:0;return idadeDias(pk)<IDADE_MIN_DIAS?0:1}
 const podeConferir=pk=>isCurador(pk)||(govbrAtivo()?atestado(pk):true);
@@ -1374,7 +1378,7 @@ function openRevisar(cid){
       <div><b>Fonte:</b> ${c.fonte?`<a href="${esc(c.fonte)}" target="_blank" rel="noopener noreferrer">${esc(hostOf(c.fonte)||c.fonte)}</a> <span class="muted">(${FONTE_TXT[fonteTipo(c.fonte)]})</span>`:'<span class="muted">nenhuma informada</span>'}</div>
       ${c.obs?`<div><b>Observação:</b> ${esc(c.obs)}</div>`:""}
       ${c.print&&/^data:image\//.test(c.print)?`<div><b>Print enviado:</b><br><img src="${esc(c.print)}" alt="Print do trecho do documento" style="max-width:100%;max-height:260px;border-radius:8px;margin-top:6px"></div>`:""}
-      <div class="muted">Enviado por <span class="mono">${esc(curto(autorDe(c)))}</span>${isCurador(autorDe(c))?" (curadoria)":""} em ${fmtDate(c.criado)} · ${a.nconf||0} confirmações, ${a.ncont||0} contestações</div>
+      <div class="muted">Enviado por <span class="mono">${esc(curto(autorDe(c)))}</span>${isCurador(autorDe(c))?" (curadoria)":""}${confirmTxt(autorDe(c))?` · conta com ${esc(confirmTxt(autorDe(c)))}`:" · identidade não confirmada"} em ${fmtDate(c.criado)} · ${a.nconf||0} confirmações, ${a.ncont||0} contestações</div>
     </div>
     ${votos.filter(v=>v.v<0&&v.motivo).length?`<div class="stack" style="gap:6px"><b>Motivos das contestações</b>${votos.filter(v=>v.v<0&&v.motivo).map(v=>`<p class="muted" style="font-size:.88rem">“${esc(v.motivo)}” — <span class="mono">${esc(curto(v.uid))}</span></p>`).join("")}</div>`:""}
     ${proprio?`<p class="muted">Você enviou esta informação, então não pode conferi-la.</p>`:`
@@ -1882,13 +1886,16 @@ const BADGES=[
  {id:"vizinho",n:"Vizinhança Solidária",d:"Apoiar 5 relatos ou propostas de outras pessoas.",f:"part",tier:1,g:"people",t:c=>c.apoiosDados>=5},
  {id:"conferente",n:"Conferente",d:"Conferir 10 informações enviadas por outras pessoas.",f:"part",tier:1,g:"eye",t:c=>c.conferencias>=10},
  {id:"curador",n:"Fonte Confiável",d:"Ter 3 contribuições suas verificadas pela comunidade.",f:"part",tier:2,g:"check",t:c=>c.contribVer>=3},
+ {id:"idemail",n:"E-mail Confirmado",d:"Confirmar o e-mail da conta por um código enviado ao endereço. A confirmação de e-mail ainda não está disponível no app.",f:"id",tier:1,g:"chat",t:()=>!!confirmacoes(S.uid).email},
+ {id:"idtel",n:"Telefone Confirmado",d:"Confirmar o celular pelo WhatsApp ou SMS. A confirmação por telefone ainda não está disponível no app.",f:"id",tier:2,g:"key",t:()=>!!confirmacoes(S.uid).telefone},
+ {id:"idgov",n:"Cidadania gov.br",d:"Vincular a conta ao gov.br, que confirma nome e CPF. Depende do credenciamento do app junto ao governo federal.",f:"id",tier:3,g:"shield",t:()=>!!confirmacoes(S.uid).govbr},
  {id:"ficha",n:"Ficha Completa",d:"Preencher CPF, cidade de votação e bairro no perfil.",f:"part",tier:1,g:"home",t:c=>c.fichaOk}
 ];
 const TIER={1:{n:"Bronze",c:"#B4703A",c2:"#E0A877"},2:{n:"Prata",c:"#7F8C97",c2:"#D4DCE3"},3:{n:"Ouro",c:"#C89211",c2:"#F6D26B"}};
-const FAMILIA={saber:"Conhecimento",acao:"Ação",part:"Participação"};
+const FAMILIA={saber:"Conhecimento",acao:"Ação",part:"Participação",id:"Identidade"};
 function badgeSvg(b,on,size=72){
   const t=TIER[b.tier]; const fill=on?`url(#g${b.id})`:"var(--sunk)"; const stroke=on?t.c:"var(--line)"; const ink=on?"#2A1A05":"var(--muted)";
-  const shape=b.f==="saber"?'<path d="M36 4l28 16v32L36 68 8 52V20z"/>':b.f==="acao"?'<circle cx="36" cy="36" r="31"/>':'<path d="M36 4l28 9v21c0 17-12 29-28 34C20 63 8 51 8 34V13z"/>';
+  const shape=b.f==="saber"?'<path d="M36 4l28 16v32L36 68 8 52V20z"/>':b.f==="acao"?'<circle cx="36" cy="36" r="31"/>':b.f==="id"?'<rect x="6" y="12" width="60" height="48" rx="10"/>':'<path d="M36 4l28 9v21c0 17-12 29-28 34C20 63 8 51 8 34V13z"/>';
   return `<svg width="${size}" height="${size}" viewBox="0 0 72 72" aria-hidden="true"><defs><linearGradient id="g${b.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t.c2}"/><stop offset="1" stop-color="${t.c}"/></linearGradient></defs><g fill="${fill}" stroke="${stroke}" stroke-width="3" ${on?"":'stroke-dasharray="5 4"'}>${shape}</g><g transform="translate(22 22) scale(1.17)" fill="none" stroke="${ink}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" opacity="${on?1:.55}">${GLYPH[b.g]}</g></svg>`;
 }
 function badgesGanhos(){const c=contexto();return BADGES.filter(b=>{try{return b.t(c)}catch(e){return false}})}
@@ -1964,6 +1971,10 @@ function viewPerfil(){
   </section>
   ${levelCard()}
   ${badgesSection()}
+  ${(()=>{const cf=confirmacoes(S.uid);const linha=(rot,val,conf,obs)=>`<div class="row" style="justify-content:space-between;gap:8px"><span><b>${rot}</b><br><span class="muted" style="font-size:.86rem">${val?esc(val):"não informado"}</span></span>${conf?'<span class="pill s-resolvida"><i></i>Confirmado</span>':val?`<span class="pill s-rascunho"><i></i>${obs||"Declarado"}</span>`:'<span class="pill s-rascunho"><i></i>Vazio</span>'}</div>`;
+    return `<section class="card stack"><h3>Sua identidade</h3><p class="muted" style="font-size:.88rem">“Declarado” é o que você mesmo informou. “Confirmado” é o que um serviço de confirmação verificou. Outras pessoas só veem quais itens estão confirmados, nunca os dados em si.</p>
+    <div class="stack" style="gap:10px">${linha("Nome",S.perfil.nome,cf.govbr)}${linha("E-mail",S.perfil.email,cf.email)}${linha("Telefone",S.perfil.telefone,cf.telefone)}${linha("CPF",S.perfil.cpf,cf.govbr)}${linha("Cidade onde vota",S.perfil.cidadeVoto,false)}</div>
+    <p class="muted" style="font-size:.84rem">A confirmação por e-mail, telefone ou gov.br ainda não está ativa. Quando estiver, cada item confirmado ganha um badge da família Identidade e passa a aparecer nas suas contribuições.</p></section>`})()}
   <section class="card stack"><h3>Dados para os modelos de e-mail</h3>
     <p class="muted" style="font-size:.9rem">Só entram nas mensagens que você enviar identificado. ${S.online?"Ficam guardados na sua área privada do app.":"Ficam guardados neste aparelho."}</p>
     <form id="fPerf" class="stack">
