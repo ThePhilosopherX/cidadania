@@ -2,7 +2,7 @@ name: Atualizar dados oficiais
 
 on:
   schedule:
-    - cron: "17 6 * * 1"   # toda segunda-feira, 03:17 em Brasília
+    - cron: "17 6 * * *"   # todo dia, 03:17 em Brasília (audiências mudam rápido)
   workflow_dispatch:
 
 permissions:

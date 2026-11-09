@@ -281,6 +281,38 @@ def senado():
     salvar("senadores.json", sorted(sens, key=lambda x: x["n"] or ""))
 
 
+# ---------------------------------------------------------------- Audiências públicas (Câmara)
+def audiencias_camara():
+    from datetime import timedelta
+    log("Câmara: audiências públicas dos próximos 60 dias")
+    hoje = datetime.now(timezone.utc).date()
+    fim = hoje + timedelta(days=60)
+    url = f"{CAMARA}/api/v2/eventos?dataInicio={hoje.isoformat()}&dataFim={fim.isoformat()}&itens=100&ordem=ASC&ordenarPor=dataHoraInicio"
+    eventos = []
+    while url:
+        j = json.loads(baixar(url))
+        eventos += j.get("dados", [])
+        url = next((l["href"] for l in j.get("links", []) if l.get("rel") == "next"), None)
+    auds = []
+    for e in eventos:
+        tipo = (e.get("descricaoTipo") or "")
+        if "audi" not in tipo.lower() or "blica" not in tipo.lower():
+            continue
+        if (e.get("situacao") or "").lower().startswith("cancel"):
+            continue
+        orgs = e.get("orgaos") or []
+        local = e.get("localCamara") or {}
+        auds.append({"id": e.get("id"), "inicio": e.get("dataHoraInicio"), "situacao": e.get("situacao") or "",
+                     "tema": re.sub(r"\s+", " ", e.get("descricao") or "").strip()[:400],
+                     "orgao": ", ".join(o.get("sigla") or "" for o in orgs if o.get("sigla")),
+                     "orgaoNome": ", ".join(o.get("nome") or "" for o in orgs if o.get("nome"))[:200],
+                     "local": local.get("nome") or e.get("localExterno") or "",
+                     "url": f"https://www.camara.leg.br/evento-legislativo/{e.get('id')}",
+                     "video": e.get("urlRegistro") or ""})
+    fontes["camara_audiencias"] = {"eventos": len(eventos), "audiencias": len(auds)}
+    salvar("audiencias_camara.json", {"gerado": datetime.now(timezone.utc).isoformat(timespec="minutes"), "itens": auds})
+
+
 # ---------------------------------------------------------------- execução
 def tentar(nome, f, *a):
     try:
@@ -314,6 +346,7 @@ def main():
         salvar("estados.json", estados)
     tentar("Câmara", camara)
     tentar("Senado", senado)
+    tentar("Câmara audiências", audiencias_camara)
     if partidos:
         salvar("partidos.json", {k: v for k, v in partidos.items() if k})
     salvar("meta.json", {"atualizado": datetime.now(timezone.utc).isoformat(timespec="minutes"), "fontes": fontes, "erros": erros})
