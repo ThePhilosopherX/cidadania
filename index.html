@@ -822,17 +822,26 @@ function viewRelatar(){
   }
   const cat=CAT[d.cat]; const ch=CHANNEL[cat.e]; const ve=valorDe(alvoEmail(cat)); const sug=ve.ver?ve.ver.c.valor:"";
   if(!d.para&&sug)d.para=sug; if(d.compartilhar===undefined)d.compartilhar=true;
+  const canal=cat.e==="municipal"?canalCidade():null; if(!d.via)d.via=canal&&!sug?"central":"email";
   const novoEmail=d.para&&emailOk(d.para)&&d.para.toLowerCase()!==sug&&!ve.todos.some(x=>x.c.valor===d.para.toLowerCase());
   const corpo=corpoEmail(d,d.modelo,d.ident); const assunto=MODELOS[d.modelo].assunto(d);
   return head+`<h1>Enviar cobrança</h1>
     <div class="stack"><span class="eyebrow">Tipo de mensagem</span><div class="seg" role="group">${Object.entries(MODELOS).map(([k,m])=>`<button data-mod="${k}" aria-pressed="${d.modelo===k}">${m.n}</button>`).join("")}</div></div>
     <div class="stack"><span class="eyebrow">Identificação</span><div class="seg" role="group">${[["completo","Completa"],["nome","Só nome"],["anonimo","Anônimo"]].map(([k,n])=>`<button data-id="${k}" aria-pressed="${d.ident===k}">${n}</button>`).join("")}</div>
     <p class="muted" style="font-size:.85rem">${d.ident==="completo"?"Inclui nome, CPF, cidade de votação e contato. Pedidos identificados têm mais chance de resposta e você recebe o retorno.":d.ident==="nome"?"Inclui só seu nome e e-mail.":"Sem dados pessoais. Para anonimato real, envie de um e-mail que não leve seu nome. Pedidos pela Lei de Acesso à Informação exigem identificação."}${d.ident==="completo"&&!S.perfil.cpf?' <a href="#perfil">Complete CPF e cidade de votação no perfil.</a>':""}</p></div>
+    ${cat.e==="municipal"?`<div class="stack"><span class="eyebrow">Como enviar</span><div class="seg" role="group">${[["email","Por e-mail"],["central","Central da cidade"]].map(([k,n])=>`<button data-via="${k}" aria-pressed="${d.via===k}">${n}</button>`).join("")}</div></div>`:""}
+    ${d.via==="central"?(canal?`<div class="card stack" style="gap:8px"><span class="eyebrow">Canal oficial de ${esc(S.cidade.nome)}</span><h3>${esc(canal.nome)}</h3>${canal.nota?`<p class="muted" style="font-size:.9rem">${esc(canal.nota)}</p>`:""}
+      <div class="row">${canal.url?`<a class="btn small primary" href="${esc(canal.url)}" target="_blank" rel="noopener">Abrir ${esc(canal.nome)}</a>`:""}${canal.telefone?`<span class="mono">Telefone: ${esc(canal.telefone)}</span>`:""}</div>
+      <ol class="flow" style="font-size:.9rem"><li><div>Toque em <b>Copiar texto</b>, abaixo.</div></li><li><div>Abra a central e escolha o tipo de pedido (reclamação, solicitação de serviço ou denúncia).</div></li><li><div>Cole o texto, anexe as fotos e envie.</div></li><li><div>Anote aqui o número de protocolo que a central mostrar.</div></li></ol>
+      <p class="muted" style="font-size:.8rem">${canal.origem==="oficial"?"Canal confirmado em documento oficial":`Canal informado por moradores e conferido por ${canal.conf} ${canal.conf===1?"pessoa":"pessoas"}`}${canal.fonte?` · <a href="${esc(canal.fonte)}" target="_blank" rel="noopener noreferrer">fonte</a>`:""}</p></div>`
+      :`<div class="card flat stack"><p><b>Ainda não sabemos a central de atendimento de ${esc(S.cidade.nome)}.</b></p><p class="muted" style="font-size:.9rem">Muitas cidades têm telefone 156, site ou aplicativo próprio. Se você souber, informe com a fonte para outros moradores.</p><button class="btn small" id="infCanal" type="button" style="align-self:flex-start">Informar a central da cidade</button></div>`)
+      +`<label class="f">Protocolo dado pelo órgão <small>Opcional. Pode anotar depois, na cobrança.</small><input type="text" id="protoOrg" value="${esc(d.protoOrg||"")}" placeholder="Ex.: RIO-12345678-9"></label>`:`
     <label class="f">Para <small>${esc(ch.nome)}. ${esc(ch.nota)} ${ve.ver?`Endereço conferido por ${ve.ver.a.nconf} ${ve.ver.a.nconf===1?"pessoa":"pessoas"}${emailOficial(sug)?"":", fora de domínio oficial"}.`:ve.pend.length?`Há ${ve.pend.length} ${ve.pend.length>1?"sugestões":"sugestão"} aguardando conferência: ${ve.pend.slice(0,2).map(x=>esc(x.c.valor)).join(", ")}. Confira no site oficial antes de usar.`:"Ninguém informou ainda o e-mail deste órgão em "+esc(S.cidade.nome)+". Cole o endereço do site oficial."}</small><input type="email" id="para" value="${esc(d.para)}" placeholder="ouvidoria@…gov.br"></label>
     ${novoEmail?`<label class="row" style="gap:10px;font-size:.9rem"><input type="checkbox" id="shareMail" ${d.compartilhar?"checked":""} style="width:20px;height:20px"> Sugerir este e-mail para outros moradores <span class="muted">(passa por conferência)</span></label>`:""}
     <div class="row">${ch.url?`<a class="btn small" href="${ch.url}" target="_blank" rel="noopener">Abrir o Fala.BR</a>`:""}<button class="btn small ghost" id="mailHist" type="button">E-mails sugeridos e conferências</button></div>
-    <div class="mail"><dl class="mh"><dt>Para</dt><dd>${esc(d.para||"—")}</dd><dt>Assunto</dt><dd id="mAss">${esc(assunto)}</dd></dl><pre id="mBody">${esc(corpo)}</pre></div>
-    <div class="row"><button class="btn" id="cpy">Copiar texto</button><a class="btn" id="mailto" href="mailto:${encodeURIComponent(d.para)}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo.slice(0,1800))}">Abrir no app de e-mail</a></div>
+    `}
+    <div class="mail"><dl class="mh"><dt>Para</dt><dd>${esc(d.via==="central"?(canal?canal.nome:"Central da cidade"):(d.para||"—"))}</dd><dt>Assunto</dt><dd id="mAss">${esc(assunto)}</dd></dl><pre id="mBody">${esc(corpo)}</pre></div>
+    <div class="row"><button class="btn" id="cpy">Copiar texto</button>${d.via==="central"?"":`<a class="btn" id="mailto" href="mailto:${encodeURIComponent(d.para)}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo.slice(0,1800))}">Abrir no app de e-mail</a>`}</div>
     <label class="row" style="gap:10px;font-weight:600"><input type="checkbox" id="pub" ${d.publico?"checked":""} style="width:20px;height:20px"> Mostrar no mural de ${esc(S.cidade.nome)} <span class="muted" style="font-weight:400;font-size:.85rem">(sem seu nome)</span></label>
     <div class="row"><button class="btn" id="bk">Voltar</button><button class="btn primary grow" id="fin">Registrar como enviada</button></div>
     <p class="muted" style="font-size:.84rem">Envie pelo seu e-mail ou pelo canal oficial e depois toque em “Registrar como enviada”. A contagem do prazo começa aí.</p>`;
@@ -867,19 +876,23 @@ function bindRelatar(){
   if(d.passo===4){
     document.querySelectorAll("[data-mod]").forEach(b=>b.onclick=()=>{d.modelo=b.dataset.mod;if(d.modelo==="lai"&&d.ident==="anonimo")d.ident="nome";render()});
     document.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{d.ident=b.dataset.id;if(d.ident==="anonimo"&&d.modelo==="lai"){d.modelo="reclamacao";toast("Pedido pela LAI exige identificação; mudei para Reclamação")}render()});
-    $("#para").oninput=e=>{d.para=e.target.value.trim()};$("#para").onchange=()=>render();
+    const pa=$("#para");if(pa){pa.oninput=e=>{d.para=e.target.value.trim()};pa.onchange=()=>render()}
+    const mh=$("#mailHist");if(!mh){} 
     $("#pub").onchange=e=>{d.publico=e.target.checked};
     const sm=$("#shareMail");if(sm)sm.onchange=e=>{d.compartilhar=e.target.checked};
-    $("#mailHist").onclick=()=>{const cat=CAT[d.cat];openAlvo(alvoEmail(cat),`E-mail: ${cat.org} — ${S.cidade.nome}`,"email")};
+    document.querySelectorAll("[data-via]").forEach(b=>b.onclick=()=>{d.via=b.dataset.via;render()});
+    const po=$("#protoOrg");if(po)po.oninput=e=>{d.protoOrg=e.target.value.trim()};
+    const ic=$("#infCanal");if(ic)ic.onclick=()=>openContrib({alvo:alvoCanal(S.cidade),campo:"canal",rotulo:`Central de atendimento — ${S.cidade.nome}`});
+    const mh2=$("#mailHist");if(mh2)mh2.onclick=()=>{const cat=CAT[d.cat];openAlvo(alvoEmail(cat),`E-mail: ${cat.org} — ${S.cidade.nome}`,"email")};
     $("#cpy").onclick=()=>copyText(`Assunto: ${$("#mAss").textContent}\n\n${$("#mBody").textContent}`,$("#mBody"));
     $("#fin").onclick=async()=>{
-      const cat=CAT[d.cat]; const r={id:d.id,titulo:d.titulo,texto:d.texto,local:d.local,bairro:d.bairro||"",rua:d.rua||"",cat:d.cat,modelo:d.modelo,ident:d.ident,para:d.para,
+      const cat=CAT[d.cat]; const r={id:d.id,titulo:d.titulo,texto:d.texto,local:d.local,bairro:d.bairro||"",rua:d.rua||"",cat:d.cat,modelo:d.modelo,ident:d.ident,via:d.via||"email",para:d.via==="central"?((canalCidade()||{}).nome||"Central da cidade"):d.para,protoOrg:d.via==="central"?(d.protoOrg||""):"",
         midia:d.midia.filter(m=>!m.temporario).map(m=>({tipo:m.tipo,url:m.url,assetId:m.assetId||null,nome:m.nome})),
         cidade:S.cidade.nome,uf:S.cidade.uf||"",pais:S.cidade.pais||"Brasil",criado:Date.now(),enviadoEm:Date.now(),respostas:[],status:"enviada",
         assunto:MODELOS[d.modelo].assunto(d),corpo:corpoEmail(d,d.modelo,d.ident)};
       await Store.saveRec(r);
       const ve=valorDe(alvoEmail(cat)); const em=(d.para||"").toLowerCase();
-      if(d.compartilhar!==false&&emailOk(em)&&!ve.todos.some(x=>x.c.valor===em)){const meusHoje=S.contribs.filter(x=>autorDe(x)===S.uid&&Date.now()-x.criado<864e5).length;
+      if(d.via!=="central"&&d.compartilhar!==false&&emailOk(em)&&!ve.todos.some(x=>x.c.valor===em)){const meusHoje=S.contribs.filter(x=>autorDe(x)===S.uid&&Date.now()-x.criado<864e5).length;
         if(meusHoje<LIMITE_DIA)await Store.put("contrib","contribs","c_"+Date.now().toString(36)+uidLocal(),{alvo:alvoEmail(cat),campo:"email",valor:em,fonte:"",obs:"Usado numa cobrança",rotulo:`E-mail: ${cat.org} — ${S.cidade.nome}`,cidade:S.cidade.nome,uf:S.cidade.uf||"",autor:S.uid,criado:Date.now()})}
       if(d.publico){const f=r.midia.find(m=>m.tipo==="foto");let foto="";if(f){foto=f.url.startsWith("data:")?await thumb(f.url):f.url}
         await Store.put("mural","mural","m_"+r.id,{titulo:r.titulo,resumo:r.texto.slice(0,220),local:r.local,bairro:r.bairro,rua:r.rua,cat:r.cat,cidade:r.cidade,uf:r.uf,pais:r.pais,foto,criado:r.criado,status:"aberto"})}
@@ -896,21 +909,23 @@ function openRec(id){
     ${r.midia?.length?`<div class="thumbs">${r.midia.map(m=>m.tipo==="foto"?`<img src="${esc(m.url)}" alt="">`:`<video src="${esc(m.url)}" controls style="height:64px;border-radius:6px"></video>`).join("")}</div>`:""}
     <p>${esc(r.texto)}</p>${r.local?`<p class="muted">Local: ${esc(r.local)}</p>`:""}
     <div class="timeline">
-      <div class="ev"><b>Enviada</b> <span class="muted">${fmtDate(r.enviadoEm||r.criado)} · ${esc(MODELOS[r.modelo]?.n||"")} · ${r.ident==="anonimo"?"anônima":"identificada"}</span><br><span class="muted" style="font-size:.86rem">Para: ${esc(r.para||cat?.org||"")}</span></div>
+      <div class="ev"><b>Enviada</b> <span class="muted">${fmtDate(r.enviadoEm||r.criado)} · ${esc(MODELOS[r.modelo]?.n||"")} · ${r.ident==="anonimo"?"anônima":"identificada"}</span><br><span class="muted" style="font-size:.86rem">Para: ${esc(r.para||cat?.org||"")}${r.protoOrg?` · protocolo do órgão <span class="mono">${esc(r.protoOrg)}</span>`:""}</span></div>
       ${(r.respostas||[]).map(x=>`<div class="ev resp"><b>Resposta${x.de?" de "+esc(x.de):""}</b> <span class="muted">${fmtDate(x.em)}</span><p style="white-space:pre-wrap">${esc(x.texto)}</p></div>`).join("")}
       ${r.status==="resolvida"?`<div class="ev"><b>Resolvida</b> <span class="muted">${fmtDate(r.resolvidoEm||Date.now())}</span></div>`:""}
     </div>
+    <form id="fProto" class="row" style="align-items:flex-end"><label class="f grow">Protocolo dado pelo órgão<input type="text" id="rsProto" value="${esc(r.protoOrg||"")}" placeholder="Número que o órgão informou"></label><button class="btn" type="submit">Salvar</button></form>
     <form id="fResp" class="stack card"><h3>Registrar resposta recebida</h3>
       <label class="f">Quem respondeu<input type="text" id="rsDe" placeholder="Ex.: Ouvidoria da Prefeitura"></label>
       <label class="f">Texto da resposta<textarea id="rsTx"></textarea></label>
       <button class="btn" type="submit">Salvar resposta</button></form>
     <div class="row">
       ${r.status!=="resolvida"?'<button class="btn primary" id="rsOk">Marcar como resolvida</button>':'<button class="btn" id="rsReopen">Reabrir</button>'}
-      <button class="btn" id="rsCopy">Copiar e-mail enviado</button>
+      <button class="btn" id="rsCopy">Copiar texto enviado</button>
       ${st.k==="vencida"?'<button class="btn ipe" id="rsEsc">Escalar cobrança</button>':""}
       <button class="btn ghost" id="rsDel" style="margin-left:auto">Excluir</button>
     </div>
     <div id="rsDelConf" hidden class="notice"><span class="grow">Excluir esta cobrança do seu perfil? Não dá para desfazer.</span><button class="btn small" id="rsDelYes">Excluir</button></div>`,el=>{
+      $("#fProto",el).onsubmit=async e=>{e.preventDefault();r.protoOrg=$("#rsProto",el).value.trim();await Store.saveRec(r);toast("Protocolo salvo")};
       $("#fResp",el).onsubmit=async e=>{e.preventDefault();const t=$("#rsTx",el).value.trim();if(!t)return;r.respostas=[...(r.respostas||[]),{de:$("#rsDe",el).value.trim(),texto:t,em:Date.now()}];if(r.status!=="resolvida")r.status="respondida";await Store.saveRec(r);closeSheet();render();openRec(r.id)};
       const ok=$("#rsOk",el);if(ok)ok.onclick=async()=>{r.status="resolvida";r.resolvidoEm=Date.now();await Store.saveRec(r);const mm=S.mural.find(x=>x.id==="m_"+r.id);if(mm){const {id:_i,_autor,...rest}=mm;await Store.put("mural","mural",mm.id,{...rest,status:"resolvido",resolvidoEm:Date.now()})}closeSheet();render();toast("Marcada como resolvida")};
       const ro=$("#rsReopen",el);if(ro)ro.onclick=async()=>{r.status=r.respostas?.length?"respondida":"enviada";await Store.saveRec(r);closeSheet();render()};
@@ -1011,6 +1026,16 @@ const PASTAS_EST=uniq([...CATS.filter(c=>c.e==="estadual").map(c=>c.pasta),"Faze
 const MINISTERIOS=uniq(CATS.map(c=>c.min));
 const slugC=c=>`${c.uf||"XX"}:${regKey(c.nome).replace(/ /g,"-")}`;
 function alvoEmail(cat){return `email|${slugC(S.cidade)}|${cat.k}`}
+/* Centrais de atendimento conferidas em documento oficial. Novas cidades entram por contribuição conferida. */
+const CANAIS_BASE={
+  "RJ:rio-de-janeiro":{nome:"Central 1746",url:"https://www.1746.rio",telefone:"1746",nota:"Pedidos de serviço e ouvidoria da Prefeitura do Rio: telefone 1746 (24 horas), site, aplicativo 1746 ou atendimento presencial nas Regiões Administrativas.",fonte:"https://controladoria.prefeitura.rio/wp-content/uploads/sites/29/2022/06/Carta-Servico-Versao-Final-.pdf"}
+};
+const alvoCanal=c=>`canal|${slugC(c)}`;
+function canalCidade(c=S.cidade){
+  const b=CANAIS_BASE[slugC(c)]; if(b)return {...b,origem:"oficial"};
+  const v=valorDe(alvoCanal(c)); if(v.ver)return {...v.ver.c.valor,fonte:v.ver.c.fonte,origem:"comunidade",conf:v.ver.a.nconf};
+  return null;
+}
 function alvoSec(nivel,c,pasta){return nivel==="mun"?`sec-mun|${slugC(c)}|${pasta}`:nivel==="est"?`sec-est|${c.uf}|${pasta}`:`ministro|${pasta}`}
 function cargoSec(nivel,c,pasta){return nivel==="mun"?`Secretário(a) municipal — ${pasta}`:nivel==="est"?`Secretário(a) estadual — ${pasta}`:pasta.replace(/^Ministério/,"Ministro(a)")}
 function secretarioPessoa(nivel,c,pasta){
@@ -1114,7 +1139,7 @@ function valorDe(alvo){
 const ST_TXT={verificado:"Verificado",pendente:"Aguardando conferência",contestado:"Contestado",removido:"Removido pela curadoria",recusado:"Recusado"};
 const ST_CLS={verificado:"s-resolvida",pendente:"s-enviada",contestado:"s-vencida",removido:"s-rascunho",recusado:"s-rascunho"};
 function stPill(a){return `<span class="pill ${ST_CLS[a.st]}"><i></i>${ST_TXT[a.st]}${a.st==="pendente"?` · ${Math.floor(a.conf)}/${a.precisa}`:""}</span>`}
-function valorTxt(c){return c.campo==="email"?c.valor:c.campo==="aviso"?(c.valor&&c.valor.texto)||"":`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.partido?" ("+c.valor.partido+")":""}`}
+function valorTxt(c){return c.campo==="canal"?`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.telefone?" · "+c.valor.telefone:""}${c.valor&&c.valor.url?" · "+(hostOf(c.valor.url)||c.valor.url):""}`:c.campo==="email"?c.valor:c.campo==="aviso"?(c.valor&&c.valor.texto)||"":`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.partido?" ("+c.valor.partido+")":""}`}
 function curto(pk){return pk?pk.slice(0,8)+"…":"?"}
 const REGRAS_HTML=`<details class="acc"><summary>Como evitamos erros e fraudes</summary><div class="body" style="font-size:.92rem">
   <p><b>Dado oficial vem primeiro.</b> Eleitos, partidos e mandatos vêm do TSE, da Câmara e do Senado e não podem ser editados. Moradores só podem anexar um alerta, com fonte, se alguém deixou o cargo.</p>
@@ -1141,6 +1166,10 @@ const GUIA={
    ["Página do órgão","Procure “Fale conosco”, “Contato” ou “Ouvidoria” no site oficial."],
    ["Carta de Serviços ao Usuário","A Lei 13.460/2017 obriga cada órgão a publicar seus canais de atendimento nessa carta. Ela costuma estar no rodapé do site."],
    ["Prefira domínio oficial","Endereços terminados em .gov.br, .leg.br ou .jus.br passam com menos conferências. E-mail pessoal ou de provedor gratuito exige mais conferências e pode ser contestado."]]},
+ "canal":{t:"Central de atendimento da cidade",onde:[
+   ["Site da prefeitura","Procure “Atendimento ao cidadão”, “Ouvidoria”, “Fale com a prefeitura” ou um número de três dígitos, como 156."],
+   ["Carta de Serviços ao Usuário","A Lei 13.460/2017 obriga a prefeitura a publicar seus canais de atendimento. O documento costuma estar no site da ouvidoria ou da controladoria."],
+   ["Loja de aplicativos","Muitas capitais têm aplicativo oficial. Confira se o desenvolvedor é a própria prefeitura antes de informar."]]},
  "aviso":{t:"Saída do cargo",onde:[
    ["Diário Oficial","Exoneração, renúncia, licença e posse de substituto são publicadas no diário oficial do município, do estado ou da União."],
    ["Câmara Municipal ou Assembleia","O site da casa legislativa publica a posse de suplentes e as licenças de vereadores e deputados."],
@@ -1170,6 +1199,7 @@ function openComoContribuir(){
 function openContrib(op){
   const tipo=op.campo;
   const campos=tipo==="email"?`<label class="f">E-mail oficial do órgão<input type="email" id="ctVal" value="${esc(op.valor||"")}" placeholder="ouvidoria@prefeitura.gov.br"></label>`
+    :tipo==="canal"?`<label class="f">Nome da central<input type="text" id="ctVal" placeholder="Ex.: Central 156, Ouvidoria Municipal"></label><label class="f">Site ou aplicativo (link)<input type="text" inputmode="url" id="ctUrl" placeholder="https://…"></label><label class="f">Telefone (se houver)<input type="tel" id="ctTel" placeholder="Ex.: 156"></label>`
     :tipo==="aviso"?`<label class="f">O que mudou?<textarea id="ctVal" style="min-height:80px" placeholder="Ex.: renunciou em 03/2026; assumiu o vice."></textarea></label>`
     :`<label class="f">Nome de quem ocupa o cargo hoje<input type="text" id="ctVal"></label><label class="f">Partido (sigla, se houver)<input type="text" id="ctPart" maxlength="12"></label>`;
   openSheet(op.rotulo,`
@@ -1193,7 +1223,8 @@ function openContrib(op){
         const raw=$("#ctVal",el).value.trim(); const fonte=fonteIn.value.trim();
         if(fonte&&!hostOf(fonte))return show("O link precisa começar com https://.");
         let valor;
-        if(tipo==="email"){if(!emailOk(raw))return show("Escreva um e-mail completo, como ouvidoria@cidade.mg.gov.br.");valor=raw.toLowerCase()}
+        if(tipo==="canal"){const u=$("#ctUrl",el).value.trim(),tel=$("#ctTel",el).value.trim();if(raw.length<3)return show("Escreva o nome da central.");if(!u&&!tel)return show("Informe o link ou o telefone da central.");if(u&&!hostOf(u))return show("O link da central precisa começar com https://.");valor={nome:raw,url:u,telefone:tel}}
+        else if(tipo==="email"){if(!emailOk(raw))return show("Escreva um e-mail completo, como ouvidoria@cidade.mg.gov.br.");valor=raw.toLowerCase()}
         else if(tipo==="aviso"){if(raw.length<10)return show("Descreva a mudança em pelo menos uma frase.");if(!fonte)return show("Alertas sobre dados oficiais precisam de link da fonte.");valor={texto:raw}}
         else{if(raw.split(" ").length<2)return show("Escreva nome e sobrenome.");valor={nome:raw,partido:$("#ctPart",el).value.trim().toUpperCase()}}
         const meusHoje=S.contribs.filter(x=>autorDe(x)===S.uid&&Date.now()-x.criado<864e5).length;
@@ -1268,7 +1299,8 @@ function viewPolitica(){
   <div class="seg" role="group" aria-label="Esfera">${[["municipal","Município"],["estadual","Estado"],["federal","União"]].map(([k,n])=>`<button data-esf="${k}" aria-pressed="${polEsf===k}">${n}</button>`).join("")}</div>
   ${o.carregando&&polEsf==="municipal"?`<p class="muted">Carregando os eleitos de ${esc(S.cidade.nome)}…</p>`:""}
   ${o.faltaMun&&polEsf==="municipal"?`<div class="notice"><b>Sem dados</b><span>Não encontramos ${esc(S.cidade.nome)} na base do TSE. Isso acontece quando o nome do município mudou de grafia.</span></div>`:""}
-  <section class="office-group"><h3>Executivo</h3><p class="muted" style="font-size:.9rem">${exe[polEsf]}</p>${eleitos.length?`<div class="list">${eleitos.map(p=>personRow(p)).join("")}</div>`:""}</section>
+  <section class="office-group"><h3>Executivo</h3><p class="muted" style="font-size:.9rem">${exe[polEsf]}</p>
+  ${polEsf==="municipal"?(()=>{const cn=canalCidade();return cn?`<p style="font-size:.9rem"><b>Atendimento e ouvidoria:</b> ${cn.url?`<a href="${esc(cn.url)}" target="_blank" rel="noopener">${esc(cn.nome)}</a>`:esc(cn.nome)}${cn.telefone?` · telefone ${esc(cn.telefone)}`:""}</p>`:`<button class="btn small" id="polCanal" style="align-self:flex-start">Informar a central de atendimento da cidade</button>`})():""}${eleitos.length?`<div class="list">${eleitos.map(p=>personRow(p)).join("")}</div>`:""}</section>
   ${sec.eleitos&&sec.eleitos.length?`<section class="office-group"><h3>Eleitos em 2026</h3><p class="muted" style="font-size:.9rem">Tomam posse em ${polEsf==="federal"?"5":"6"} de janeiro de 2027.</p><div class="list">${sec.eleitos.map(p=>personRow(p)).join("")}</div></section>`:""}
   <section class="office-group"><h3>${polEsf==="federal"?"Ministérios":"Secretarias"}</h3><p class="muted" style="font-size:.9rem">Informados e conferidos por moradores. Toque em um cargo vazio para informar quem ocupa.</p><button class="btn small" id="comoContrib" style="align-self:flex-start">Como contribuir com dados</button><div class="list">${secs.map(p=>personRow(p)).join("")}</div></section>
   <section class="office-group"><h3>Legislativo</h3><p class="muted" style="font-size:.9rem">${leg[polEsf]}</p>${sec.leg.length?`<div class="list">${sec.leg.map(p=>personRow(p)).join("")}</div>`:`<p class="muted">Dados ainda não carregados.</p>`}</section>
@@ -1286,6 +1318,7 @@ function bindPolitica(){
   document.querySelectorAll("[data-esf]").forEach(b=>b.onclick=()=>{polEsf=b.dataset.esf;render()});
   const f=$("#polFila");if(f)f.onclick=openFila; bindPeople();
   const cc=$("#comoContrib");if(cc)cc.onclick=openComoContribuir;
+  const pc=$("#polCanal");if(pc)pc.onclick=()=>openContrib({alvo:alvoCanal(S.cidade),campo:"canal",rotulo:`Central de atendimento — ${S.cidade.nome}`});
 }
 function personRow(p,papel){
   if(p.grupo)return `<button class="item-btn person" data-pid="${p.id}"><span class="avatar grp">${p.lista.length}</span><span class="grow"><b>${esc(p.nome)}</b><br><span class="muted" style="font-size:.86rem">${esc(p.cargo)}${papel?" · "+esc(papel):""}</span></span></button>`;
