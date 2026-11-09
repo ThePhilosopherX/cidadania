@@ -1,0 +1,127 @@
+name: Publicar confirmação de e-mail
+
+# Publica o serviço worker/ na Cloudflare e registra no app o endereço do serviço
+# e a chave pública que assina os atestados. Precisa destes segredos no repositório:
+# CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, BREVO_API_KEY, REMETENTE_EMAIL, CHAVE_MESTRA.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["worker/**", ".github/workflows/publicar-confirmacao.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publicar-confirmacao
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      REMETENTE_EMAIL: ${{ secrets.REMETENTE_EMAIL }}
+      CHAVE_MESTRA: ${{ secrets.CHAVE_MESTRA }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Conferir os segredos
+        id: seg
+        run: |
+          faltam=""
+          for s in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID BREVO_API_KEY REMETENTE_EMAIL CHAVE_MESTRA; do
+            [ -z "${!s}" ] && faltam="$faltam $s"
+          done
+          if [ -n "$faltam" ]; then
+            if [ "${{ github.event_name }}" = "push" ]; then
+              echo "::notice::Serviço de confirmação ainda não configurado (faltam:$faltam). Nada a publicar."
+              echo "pronto=nao" >> $GITHUB_OUTPUT; exit 0
+            fi
+            echo "::error::Faltam estes segredos em Settings > Secrets and variables > Actions:$faltam"
+            exit 1
+          fi
+          echo "pronto=sim" >> $GITHUB_OUTPUT
+          if [ ${#CHAVE_MESTRA} -lt 32 ]; then
+            echo "::error::CHAVE_MESTRA precisa ter pelo menos 32 caracteres."
+            exit 1
+          fi
+
+      - name: Instalar dependências
+        if: steps.seg.outputs.pronto == 'sim'
+        working-directory: worker
+        run: npm install --no-audit --no-fund
+
+      - name: Derivar as chaves do atestador
+        if: steps.seg.outputs.pronto == 'sim'
+        working-directory: worker
+        run: |
+          node --input-type=module -e '
+            import { createHash } from "node:crypto";
+            import { getPublicKey } from "nostr-tools/pure";
+            import { hexToBytes } from "nostr-tools/utils";
+            const m = process.env.CHAVE_MESTRA;
+            const sk = createHash("sha256").update("cidadania-atestador|" + m).digest("hex");
+            const pepper = createHash("sha256").update("cidadania-pepper|" + m).digest("hex");
+            const pk = getPublicKey(hexToBytes(sk));
+            const fs = await import("node:fs");
+            fs.appendFileSync(process.env.GITHUB_ENV, `ATTESTOR_SK=${sk}\nPEPPER=${pepper}\nATTESTOR_PK=${pk}\n`);
+          '
+          echo "::add-mask::$(grep ATTESTOR_SK $GITHUB_ENV | cut -d= -f2)"
+
+      - name: Garantir o armazenamento (KV)
+        if: steps.seg.outputs.pronto == 'sim'
+        run: |
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces"
+          id=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api?per_page=100" | jq -r '.result[]? | select(.title=="cidadania-confirma") | .id' | head -1)
+          if [ -z "$id" ]; then
+            id=$(curl -s -X POST -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" "$api" --data '{"title":"cidadania-confirma"}' | jq -r '.result.id')
+          fi
+          if [ -z "$id" ] || [ "$id" = "null" ]; then echo "::error::Não foi possível criar o KV. Confira as permissões do token."; exit 1; fi
+          sed -i "s/__KV_ID__/$id/" worker/wrangler.toml
+
+      - name: Garantir o subdomínio workers.dev
+        if: steps.seg.outputs.pronto == 'sim'
+        run: |
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain"
+          sub=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api" | jq -r '.result.subdomain // empty')
+          if [ -z "$sub" ]; then
+            sub="cidadania-${CLOUDFLARE_ACCOUNT_ID:0:8}"
+            curl -s -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" "$api" --data "{\"subdomain\":\"$sub\"}" > /dev/null
+          fi
+          echo "WORKER_URL=https://cidadania-confirma.$sub.workers.dev" >> $GITHUB_ENV
+
+      - name: Publicar o serviço
+        if: steps.seg.outputs.pronto == 'sim'
+        working-directory: worker
+        run: |
+          npx wrangler deploy
+          printf '%s' "$ATTESTOR_SK" | npx wrangler secret put ATTESTOR_SK
+          printf '%s' "$PEPPER" | npx wrangler secret put PEPPER
+          printf '%s' "$BREVO_API_KEY" | npx wrangler secret put BREVO_API_KEY
+          printf '%s' "$REMETENTE_EMAIL" | npx wrangler secret put REMETENTE_EMAIL
+
+      - name: Registrar o serviço no app
+        if: steps.seg.outputs.pronto == 'sim'
+        run: |
+          git pull --rebase --quiet origin main || true
+          echo "[\"$ATTESTOR_PK\"]" > data/atestadores.json
+          python3 - <<'PY'
+          import json, os
+          p = "data/config.json"
+          c = json.load(open(p)) if os.path.exists(p) else {}
+          c["confirmacaoUrl"] = os.environ["WORKER_URL"]
+          c.setdefault("conferenciaSoConfirmados", False)
+          json.dump(c, open(p, "w"), ensure_ascii=False, indent=2)
+          PY
+          git config user.name "cidadania-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/atestadores.json data/config.json
+          if git diff --cached --quiet; then echo "Nada a registrar."; else git commit -m "Registra o serviço de confirmação de e-mail" && git push; fi

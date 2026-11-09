@@ -25,3 +25,15 @@ Aplicativo de cidadania para registrar problemas da cidade, descobrir o órgão 
 - `vendor/nostr.bundle.js`: biblioteca nostr-tools 2.19.4 (licença Unlicense, domínio público), incluída aqui para o app não depender de CDN.
 
 Feito no GIFLABS (Grupo Investigação Filosófica, UFOP).
+
+## Confirmação de e-mail
+
+O serviço em `worker/` (Cloudflare Workers) envia um código de 6 dígitos ao e-mail e, quando o código confere, devolve um atestado assinado de que aquela conta tem o e-mail confirmado. Cada e-mail confirma uma única conta; quem prova ter a caixa de entrada fica com o vínculo. O e-mail nunca é guardado em texto: o serviço guarda só uma impressão cifrada (HMAC) dele.
+
+A rotina `.github/workflows/publicar-confirmacao.yml` publica o serviço e registra no app o endereço dele (`data/config.json`) e a chave que assina os atestados (`data/atestadores.json`). Ela precisa destes segredos em **Settings → Secrets and variables → Actions**:
+
+- `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID`: conta gratuita da Cloudflare, token com o modelo "Edit Cloudflare Workers".
+- `BREVO_API_KEY` e `REMETENTE_EMAIL`: conta gratuita na Brevo, com o e-mail remetente verificado.
+- `CHAVE_MESTRA`: uma frase longa e aleatória (32 caracteres ou mais). Dela saem a chave que assina os atestados e o segredo das impressões de e-mail. Guarde-a: trocá-la invalida as confirmações já feitas.
+
+Em `data/config.json`, `conferenciaSoConfirmados: true` faz o app aceitar conferências de dados só de contas com identidade confirmada.

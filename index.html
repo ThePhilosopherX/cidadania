@@ -606,6 +606,34 @@ const ILU_CIDADE=`<svg class="ilu" viewBox="0 0 520 300" role="img" aria-label="
 <g><circle cx="60" cy="196" r="10" fill="var(--est)"/><rect x="50" y="206" width="20" height="16" rx="6" fill="var(--est)"/><circle cx="88" cy="194" r="10" fill="var(--fed)"/><rect x="78" y="204" width="20" height="18" rx="6" fill="var(--fed)"/></g>
 <g><rect x="46" y="128" width="104" height="44" rx="12" fill="var(--surface)" stroke="var(--line)"/><path d="M70 172l-8 14 18-14z" fill="var(--surface)"/><path d="M64 150l8 8 16-18" stroke="var(--ok)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="96" y="142" width="44" height="6" rx="3" fill="var(--line)"/><rect x="96" y="154" width="32" height="6" rx="3" fill="var(--line)"/></g>
 </svg>`;
+/* ---------- CONFIRMAÇÃO DE E-MAIL ---------- */
+const confirmacaoAtiva=()=>!!(Dados.config&&Dados.config.confirmacaoUrl&&Nostr.ready);
+async function chamarConfirmacao(rota,corpo){
+  const r=await fetch(Dados.config.confirmacaoUrl.replace(/\/$/,"")+rota,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(corpo)});
+  const j=await r.json().catch(()=>({erro:"Resposta inválida do serviço."})); if(!r.ok)throw new Error(j.erro||"Falha no serviço."); return j;
+}
+function openConfirmarEmail(){
+  const email=(S.perfil.email||"").trim();
+  if(!emailOk(email)){toast("Informe um e-mail válido no seu perfil primeiro.");return}
+  openSheet("Confirmar e-mail",`<p>Vamos enviar um código de 6 dígitos para <b>${esc(email)}</b>. Só quem tem acesso a essa caixa de entrada consegue confirmar.</p>
+    <p class="muted" style="font-size:.88rem">Cada e-mail confirma uma única conta. Se ele já estiver confirmado em outro aparelho, a confirmação passa para esta conta e a outra perde o selo. O e-mail não é publicado: a rede só recebe o atestado “e-mail confirmado”.</p>
+    <button class="btn primary" id="ceEnviar">Enviar código</button>
+    <form id="ceForm" class="stack" hidden><label class="f">Código recebido <small>Confira também a caixa de spam. Vale por 15 minutos.</small><input type="text" id="ceCod" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></label><button class="btn primary" type="submit">Confirmar</button><button class="btn ghost small" type="button" id="ceDeNovo">Enviar outro código</button></form>
+    <p class="muted" id="ceMsg" role="status"></p>`,el=>{
+      const msg=t=>{$("#ceMsg",el).textContent=t};
+      const enviar=async()=>{const b=$("#ceEnviar",el);b.disabled=true;msg("Enviando…");
+        try{await chamarConfirmacao("/email/inicio",{email,pk:S.uid});msg("Código enviado. Confira seu e-mail.");b.hidden=true;$("#ceForm",el).hidden=false;$("#ceCod",el).focus()}
+        catch(e){msg(e.message);b.disabled=false}};
+      $("#ceEnviar",el).onclick=enviar; $("#ceDeNovo",el).onclick=()=>{$("#ceEnviar",el).hidden=false;$("#ceForm",el).hidden=true;enviar()};
+      $("#ceForm",el).onsubmit=async e=>{e.preventDefault();const cod=$("#ceCod",el).value.replace(/\D/g,"");if(cod.length!==6){msg("O código tem 6 dígitos.");return}
+        msg("Conferindo…");
+        try{const j=await chamarConfirmacao("/email/confirma",{email,pk:S.uid,codigo:cod});
+          for(const ev of j.eventos||[])await Nostr.publicarEvento(ev);
+          await Store.savePerfil({...S.perfil,emailConfirmado:norm(email)});
+          closeSheet();toast(j.transferido?"E-mail confirmado. A confirmação passou para esta conta.":"E-mail confirmado!");render()}
+        catch(x){msg(x.message)}};
+    });
+}
 /* ---------- CONTAS NESTE APARELHO: cada e-mail guarda seu perfil, cobranças e progresso ---------- */
 const PROG_VAZIO=()=>({aulas:{},dias:[],escalou:{},acertos1:0,vistos:[]});
 const Contas={
@@ -631,7 +659,7 @@ async function entrarComEmail(nome,email){
     Prog.d=eraVisitante?Prog.d:PROG_VAZIO();
     await Store.savePerfil({nome,email,via:"email",desde:Date.now()});
   }
-  lsSet("cid.prog",Prog.d); S.tutorialVisto=true; lsSet("cid.tut",true);
+  lsSet("cid.prog",Prog.d); S.tutorialVisto=true; lsSet("cid.tut",true); adotaCidadeLanding();
   try{localStorage.removeItem("cid.visitante");localStorage.removeItem("cid.guardado:"+norm(email).trim())}catch(x){}
   Contas.salvar();
   return {voltou:!!c};
@@ -700,7 +728,8 @@ function viewLanding(){
     <div class="stack"><button class="btn primary block" id="lnExplorar">Explorar sem cadastro</button><button class="btn block" id="lnConta">Criar conta com e-mail</button></div>
   </div></div>`;
 }
-function entrarComoVisitante(){S.perfil={nome:"",email:"",convidado:true};lsSet("cid.visitante",true)}
+function adotaCidadeLanding(){if(!S.cidade&&typeof LS!=="undefined"&&LS.cidade){S.cidade=LS.cidade;lsSet("cid.cidade",S.cidade);Dados.loadMun(S.cidade.uf)}}
+function entrarComoVisitante(){S.perfil={nome:"",email:"",convidado:true};lsSet("cid.visitante",true);adotaCidadeLanding()}
 function bindLanding(){
   if(!LS.cidade)bindCidade($("#app"),"landing");
   const cx=$("#qrCidX");if(cx)cx.onclick=()=>{guardaLS();LS.cidade=null;render();setTimeout(()=>{const q=$("#cityQ");if(q)q.focus()},40)};
@@ -1187,13 +1216,14 @@ function openPersonDemo(p){
 }
 
 /* ---------- DADOS OFICIAIS (gerados semanalmente a partir de TSE, Câmara e Senado) ---------- */
-const Dados={meta:null,estados:null,deputados:null,senadores:null,partidos:{},curadores:[],atestadores:[],mun:{},disp:false,
+const Dados={config:{},meta:null,estados:null,deputados:null,senadores:null,partidos:{},curadores:[],atestadores:[],mun:{},disp:false,
   async init(){
     if(!window.__SITE__)return;
     try{
       const r=await fetch("data/meta.json",{cache:"no-cache"}); if(!r.ok)return; this.meta=await r.json(); this.disp=true;
       const get=n=>fetch(`data/${n}.json`).then(r=>r.ok?r.json():null).catch(()=>null);
-      const [e,d,s,p,c,at,au]=await Promise.all([get("estados"),get("deputados"),get("senadores"),get("partidos"),get("curadores"),get("atestadores"),get("audiencias_camara")]);
+      const [e,d,s,p,c,at,au,cf]=await Promise.all([get("estados"),get("deputados"),get("senadores"),get("partidos"),get("curadores"),get("atestadores"),get("audiencias_camara"),get("config")]);
+      this.config=cf||{};
       this.audiencias=au;
       const dec=k=>{try{return /^npub1/.test(k)&&window.NostrTools?window.NostrTools.nip19.decode(k).data:k}catch(x){return k}};
       this.atestadores=(Array.isArray(at)?at:[]).map(dec);
@@ -1318,12 +1348,15 @@ const emailOficial=e=>ehOficial(((e||"").split("@")[1]||"").toLowerCase());
 const isCurador=pk=>Dados.curadores.includes(pk);
 const LIMITE_DIA=10, IDADE_MIN_DIAS=3;
 function idadeDias(pk){const t=Nostr.primeiro&&Nostr.primeiro[pk];if(!Nostr.ready)return 99;if(!t)return 0;return (Date.now()/1000-t)/86400}
-function atestado(pk){return S.atestados.some(a=>a.id===pk&&Dados.atestadores.includes(a._autor)&&!a.revogado)}
+const sujeito=a=>a.pk||a.id;
+function atestado(pk){return S.atestados.some(a=>sujeito(a)===pk&&Dados.atestadores.includes(a._autor)&&!a.revogado)}
 /* Tipos confirmados de uma chave: só valem atestados assinados por um serviço de confirmação autorizado. */
-function confirmacoes(pk){const t={};for(const a of S.atestados){if(a.id!==pk||a.revogado||!Dados.atestadores.includes(a._autor))continue;for(const k of ["email","telefone","govbr"])if(a[k])t[k]=a[k]}return t}
+function confirmacoes(pk){const t={};const meu=pk===S.uid;for(const a of S.atestados){if(sujeito(a)!==pk||a.revogado||!Dados.atestadores.includes(a._autor))continue;for(const k of ["email","telefone","govbr"])if(a[k])t[k]=a[k]}
+  if(meu&&t.email&&S.perfil&&norm(S.perfil.emailConfirmado||"")!==norm(S.perfil.email||""))delete t.email;
+  return t}
 const CONF_TXT={email:"e-mail confirmado",telefone:"telefone confirmado",govbr:"conta gov.br"};
 function confirmTxt(pk){const t=confirmacoes(pk);const l=Object.keys(t).map(k=>CONF_TXT[k]+(k==="govbr"&&t[k].nivel?` (${t[k].nivel})`:""));return l.length?l.join(", "):""}
-const govbrAtivo=()=>Dados.atestadores.length>0;
+const govbrAtivo=()=>!!(Dados.config&&Dados.config.conferenciaSoConfirmados)&&Dados.atestadores.length>0;
 function pesoVoto(pk){if(isCurador(pk))return 3;if(govbrAtivo())return atestado(pk)?1:0;return idadeDias(pk)<IDADE_MIN_DIAS?0:1}
 const podeConferir=pk=>isCurador(pk)||(govbrAtivo()?atestado(pk):true);
 function autorDe(c){return c._autor||c.autor}
@@ -1795,6 +1828,8 @@ const Nostr={
     const col=m[1],id=m[2],key=COLKEY[col]; if(!key)return;
     if(!this.primeiro[ev.pubkey]||ev.created_at<this.primeiro[ev.pubkey])this.primeiro[ev.pubkey]=ev.created_at;
     if((col==="apoios"||col==="cvoto")&&id.split("__")[1]!==ev.pubkey)return;
+    if(col==="atesta"){const k=d+"|"+ev.pubkey;const pv=this.seen[k];if(pv&&pv.created_at>=ev.created_at)return;this.seen[k]={pubkey:ev.pubkey,created_at:ev.created_at};
+      let dt=null;try{dt=ev.content?JSON.parse(ev.content):null}catch(e){return}applyShared("atestados",id+"|"+ev.pubkey,dt?{...dt,pk:id}:null,ev.pubkey);scheduleRender();return}
     if(col==="propostas"||col==="mural"){/* autoria: só o autor original pode alterar */}
     const prev=this.seen[d]; if(prev){if(prev.pubkey!==ev.pubkey)return;if(prev.created_at>ev.created_at)return}
     this.seen[d]={pubkey:ev.pubkey,created_at:ev.created_at};
@@ -1810,6 +1845,7 @@ const Nostr={
     const ok=res.filter(r=>r.status==="fulfilled").length; if(!ok)toast("Sem conexão com a rede agora. Tente publicar de novo mais tarde.");
     return ok>0;
   },
+  async publicarEvento(ev){this.recv(ev);const res=await Promise.allSettled(this.pool.publish(RELAYS,ev));return res.some(r=>r.status==="fulfilled")},
   npub(){try{return window.NostrTools.nip19.npubEncode(this.pk)}catch(e){return this.pk}},
   nsec(){try{return window.NostrTools.nip19.nsecEncode(this.sk)}catch(e){return ""}},
   importar(nsec){const T=window.NostrTools;const r=T.nip19.decode(nsec.trim());if(r.type!=="nsec")throw new Error("tipo");lsSet("cid.nsk",T.utils.bytesToHex(r.data));location.reload()}
@@ -1993,7 +2029,7 @@ const BADGES=[
  {id:"vizinho",n:"Vizinhança Solidária",d:"Apoiar 5 relatos ou propostas de outras pessoas.",f:"part",tier:1,g:"people",t:c=>c.apoiosDados>=5},
  {id:"conferente",n:"Conferente",d:"Conferir 10 informações enviadas por outras pessoas.",f:"part",tier:1,g:"eye",t:c=>c.conferencias>=10},
  {id:"curador",n:"Fonte Confiável",d:"Ter 3 contribuições suas verificadas pela comunidade.",f:"part",tier:2,g:"check",t:c=>c.contribVer>=3},
- {id:"idemail",n:"E-mail Confirmado",d:"Confirmar o e-mail da conta por um código enviado ao endereço. A confirmação de e-mail ainda não está disponível no app.",f:"id",tier:1,g:"chat",t:()=>!!confirmacoes(S.uid).email},
+ {id:"idemail",n:"E-mail Confirmado",d:"Confirmar o e-mail da conta pelo código enviado ao endereço (Perfil → Sua identidade).",f:"id",tier:1,g:"chat",t:()=>!!confirmacoes(S.uid).email},
  {id:"idtel",n:"Telefone Confirmado",d:"Confirmar o celular pelo WhatsApp ou SMS. A confirmação por telefone ainda não está disponível no app.",f:"id",tier:2,g:"key",t:()=>!!confirmacoes(S.uid).telefone},
  {id:"idgov",n:"Cidadania gov.br",d:"Vincular a conta ao gov.br, que confirma nome e CPF. Depende do credenciamento do app junto ao governo federal.",f:"id",tier:3,g:"shield",t:()=>!!confirmacoes(S.uid).govbr},
  {id:"ficha",n:"Ficha Completa",d:"Preencher CPF, cidade de votação e bairro no perfil.",f:"part",tier:1,g:"home",t:c=>c.fichaOk}
@@ -2080,8 +2116,8 @@ function viewPerfil(){
   ${badgesSection()}
   ${(()=>{const cf=confirmacoes(S.uid);const linha=(rot,val,conf,obs)=>`<div class="row" style="justify-content:space-between;gap:8px"><span><b>${rot}</b><br><span class="muted" style="font-size:.86rem">${val?esc(val):"não informado"}</span></span>${conf?'<span class="pill s-resolvida"><i></i>Confirmado</span>':val?`<span class="pill s-rascunho"><i></i>${obs||"Declarado"}</span>`:'<span class="pill s-rascunho"><i></i>Vazio</span>'}</div>`;
     return `<section class="card stack"><h3>Sua identidade</h3><p class="muted" style="font-size:.88rem">“Declarado” é o que você mesmo informou. “Confirmado” é o que um serviço de confirmação verificou. Outras pessoas só veem quais itens estão confirmados, nunca os dados em si.</p>
-    <div class="stack" style="gap:10px">${linha("Nome",S.perfil.nome,cf.govbr)}${linha("E-mail",S.perfil.email,cf.email)}${linha("Telefone",S.perfil.telefone,cf.telefone)}${linha("CPF",S.perfil.cpf,cf.govbr)}${linha("Cidade onde vota",S.perfil.cidadeVoto,false)}</div>
-    <p class="muted" style="font-size:.84rem">A confirmação por e-mail, telefone ou gov.br ainda não está ativa. Quando estiver, cada item confirmado ganha um badge da família Identidade e passa a aparecer nas suas contribuições.</p></section>`})()}
+    <div class="stack" style="gap:10px">${linha("Nome",S.perfil.nome,cf.govbr)}${linha("E-mail",S.perfil.email,cf.email)}${confirmacaoAtiva()&&!cf.email&&S.perfil.email?`<button class="btn small primary" id="idConfEmail" style="align-self:flex-start">Confirmar e-mail</button>`:""}${linha("Telefone",S.perfil.telefone,cf.telefone)}${linha("CPF",S.perfil.cpf,cf.govbr)}${linha("Cidade onde vota",S.perfil.cidadeVoto,false)}</div>
+    <p class="muted" style="font-size:.84rem">${confirmacaoAtiva()?"A confirmação de e-mail já está disponível. Telefone e gov.br ainda não.":"A confirmação por e-mail, telefone ou gov.br ainda não está ativa."} Cada item confirmado ganha um badge da família Identidade e aparece nas suas contribuições.</p></section>`})()}
   <section class="card stack"><h3>Dados para os modelos de e-mail</h3>
     <p class="muted" style="font-size:.9rem">Só entram nas mensagens que você enviar identificado. ${S.online?"Ficam guardados na sua área privada do app.":"Ficam guardados neste aparelho."}</p>
     <form id="fPerf" class="stack">
@@ -2106,6 +2142,7 @@ function openSair(){
   });
 }
 function bindPerfil(){
+  const ce=$("#idConfEmail");if(ce)ce.onclick=openConfirmarEmail;
   if(visitante()){$("#pfCriar").onclick=()=>openLoginSheet("criar sua conta",()=>render());bindBadges();return}
   document.querySelectorAll("[data-pf2]").forEach(b=>b.onclick=()=>{perfFiltro=b.dataset.pf2;render()});
   bindRecItems(); bindBadges(); bindRede();

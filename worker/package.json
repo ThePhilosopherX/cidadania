@@ -1,0 +1,11 @@
+{
+  "name": "cidadania-confirma",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "nostr-tools": "2.19.4"
+  },
+  "devDependencies": {
+    "wrangler": "4.20.0"
+  }
+}

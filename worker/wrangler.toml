@@ -1,0 +1,10 @@
+# Serviço de confirmação de e-mail do Cidadania.
+# O id do KV é preenchido pela rotina .github/workflows/publicar-confirmacao.yml.
+name = "cidadania-confirma"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "KV"
+id = "__KV_ID__"
