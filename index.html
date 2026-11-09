@@ -212,8 +212,6 @@ details.acc .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10p
 /* Onboarding / login */
 .gate{min-height:100%;display:flex;flex-direction:column}
 .gate .wrap{padding-block:28px;display:flex;flex-direction:column;gap:22px;max-width:520px}
-.govbr{background:#1351B4;color:#fff;border-color:#1351B4}
-.govbr b{font-weight:800;letter-spacing:-.01em}
 .divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.82rem}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 .tut-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px;min-height:300px}
@@ -338,7 +336,7 @@ const S = {
   perfil: lsGet("cid.perfil",null),
   tutorialVisto: lsGet("cid.tut",false),
   cidade: lsGet("cid.cidade",null),
-  reclamacoes: [], mural: [], propostas: [], apoios: [], diretorio: {}, cidadesMundo: [], contribs: [], cvotos: [],
+  reclamacoes: [], mural: [], propostas: [], apoios: [], diretorio: {}, cidadesMundo: [], contribs: [], cvotos: [], atestados: [],
   uid: lsGet("cid.uid",null) || (()=>{const u="local_"+uidLocal();lsSet("cid.uid",u);return u})(),
   online:false, assets:null, sample:null, draft:null
 };
@@ -358,7 +356,7 @@ const Store = {
     claude.use("sample").then(s=>{S.sample=s;render()}).catch(()=>{});
   },
   subscribeAll(){
-    const map={mural:"mural",propostas:"propostas",apoios:"apoios",diretorio:"diretorio",cidadesMundo:"cidades_mundo",contribs:"contrib",cvotos:"cvoto"};
+    const map={mural:"mural",propostas:"propostas",apoios:"apoios",diretorio:"diretorio",cidadesMundo:"cidades_mundo",contribs:"contrib",cvotos:"cvoto",atestados:"atesta"};
     if(this.db){
       const t=setTimeout(()=>{S.loading=false;render()},10000);
       this.db.collection(this.priv()).onSnapshot(snap=>{clearTimeout(t);
@@ -377,7 +375,7 @@ const Store = {
       }
     } else {
       S.reclamacoes=lsGet("cid.rec",[]); S.mural=lsGet("cid.mural",[]); S.propostas=lsGet("cid.prop",[]);
-      S.apoios=lsGet("cid.apoios",[]); S.diretorio=lsGet("cid.dir",{}); S.cidadesMundo=lsGet("cid.mundo",[]); S.contribs=lsGet("cid.contrib",[]); S.cvotos=lsGet("cid.cvoto",[]);
+      S.apoios=lsGet("cid.apoios",[]); S.diretorio=lsGet("cid.dir",{}); S.cidadesMundo=lsGet("cid.mundo",[]); S.contribs=lsGet("cid.contrib",[]); S.cvotos=lsGet("cid.cvoto",[]); S.atestados=lsGet("cid.atesta",[]);
     }
   },
   async savePerfil(p){S.perfil=p;lsSet("cid.perfil",p);if(this.db){try{await this.db.doc(this.priv()+"/perfil").set({dados:p})}catch(e){toast("Não foi possível salvar o perfil no servidor; ficou neste aparelho.")}}},
@@ -548,31 +546,16 @@ function viewLogin(){
     <div class="stack"><h1>Sua cidade tem problemas. Você tem voz.</h1>
     <p class="muted">Registre o que está errado, descubra quem é responsável e cobre com protocolo, prazo e nome.</p></div>
     <div class="card stack">
-      <button class="btn block govbr" id="btnGov"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Entrar com <b>gov.br</b></button>
-      <div class="divider">ou com e-mail</div>
-      <form id="fLogin" class="stack" novalidate>
+<form id="fLogin" class="stack" novalidate>
         <label class="f">Nome<input type="text" id="lgNome" autocomplete="name" value="${esc(sug.nome||"")}" required></label>
         <label class="f">E-mail<input type="email" id="lgEmail" autocomplete="email" value="${esc(sug.email||"")}" required></label>
         <p class="muted" id="lgErr" role="alert" hidden></p>
         <button class="btn primary block" type="submit">Continuar</button>
       </form>
     </div>
-    <div class="notice"><b>Protótipo</b><span>O login gov.br real exige credenciamento do app junto ao governo federal. Aqui ele é simulado: você confirma seus dados manualmente.</span></div>
   </div></div>`;
 }
 function bindLogin(){
-  $("#btnGov").onclick=()=>openSheet("Entrar com gov.br",`
-    <p class="muted">Na versão publicada, o gov.br devolve nome, CPF e e-mail verificados, com o selo de confiabilidade da conta (bronze, prata ou ouro). Neste protótipo, informe os dados.</p>
-    <form id="fGov" class="stack">
-      <label class="f">Nome completo<input type="text" id="gvNome" required></label>
-      <label class="f">CPF <small>Só vai nos e-mails que você escolher enviar identificado.</small><input type="text" id="gvCpf" inputmode="numeric" placeholder="000.000.000-00"></label>
-      <label class="f">E-mail<input type="email" id="gvEmail"></label>
-      <button class="btn govbr" type="submit">Autorizar e entrar</button>
-    </form>`,el=>{
-      $("#gvCpf",el).oninput=e=>{e.target.value=maskCpf(e.target.value)};
-      $("#fGov",el).onsubmit=async e=>{e.preventDefault();const nome=$("#gvNome",el).value.trim();if(!nome){$("#gvNome",el).focus();return}
-        await Store.savePerfil({nome,cpf:$("#gvCpf",el).value.trim(),email:$("#gvEmail",el).value.trim(),via:"gov.br",desde:Date.now()});closeSheet();render()}
-    });
   $("#fLogin").onsubmit=async e=>{e.preventDefault();const nome=$("#lgNome").value.trim(),email=$("#lgEmail").value.trim();
     if(!nome||!/^\S+@\S+\.\S+$/.test(email)){const er=$("#lgErr");er.hidden=false;er.textContent="Preencha seu nome e um e-mail válido, como nome@exemplo.com.";return}
     await Store.savePerfil({nome,email,via:"email",desde:Date.now()});render()};
@@ -742,6 +725,8 @@ function redeCard(){
   return `<section class="card stack"><h3>Sua identidade na rede</h3>
     <p class="muted" style="font-size:.9rem">O mural, as propostas e os apoios circulam por uma rede descentralizada (Nostr), sem servidor central. Cada publicação sua é assinada por uma chave criada neste aparelho. Seus dados pessoais e suas cobranças nunca saem do aparelho.</p>
     <label class="f">Chave pública (pode compartilhar)<input type="text" readonly value="${esc(Nostr.npub())}" id="npub"></label>
+    ${isCurador(S.uid)?'<div class="row"><span class="pill s-resolvida"><i></i>Curadoria</span></div>':""}
+    ${govbrAtivo()?`<div class="row">${atestado(S.uid)?'<span class="pill s-resolvida"><i></i>Vinculada ao gov.br</span>':'<span class="pill s-rascunho"><i></i>Não vinculada ao gov.br</span>'}</div>`:""}
     <details class="acc"><summary>Usar a mesma identidade em outro aparelho</summary><div class="body">
       <p class="muted" style="font-size:.88rem">A chave secreta prova que as publicações são suas. Guarde-a num gerenciador de senhas e nunca a envie a ninguém.</p>
       <button class="btn small" id="nsecShow">Mostrar chave secreta</button><pre id="nsecBox" class="keybox" hidden></pre>
@@ -976,13 +961,15 @@ function openPersonDemo(p){
 }
 
 /* ---------- DADOS OFICIAIS (gerados semanalmente a partir de TSE, Câmara e Senado) ---------- */
-const Dados={meta:null,estados:null,deputados:null,senadores:null,partidos:{},curadores:[],mun:{},disp:false,
+const Dados={meta:null,estados:null,deputados:null,senadores:null,partidos:{},curadores:[],atestadores:[],mun:{},disp:false,
   async init(){
     if(!window.__SITE__)return;
     try{
       const r=await fetch("data/meta.json",{cache:"no-cache"}); if(!r.ok)return; this.meta=await r.json(); this.disp=true;
       const get=n=>fetch(`data/${n}.json`).then(r=>r.ok?r.json():null).catch(()=>null);
-      const [e,d,s,p,c]=await Promise.all([get("estados"),get("deputados"),get("senadores"),get("partidos"),get("curadores")]);
+      const [e,d,s,p,c,at]=await Promise.all([get("estados"),get("deputados"),get("senadores"),get("partidos"),get("curadores"),get("atestadores")]);
+      const dec=k=>{try{return /^npub1/.test(k)&&window.NostrTools?window.NostrTools.nip19.decode(k).data:k}catch(x){return k}};
+      this.atestadores=(Array.isArray(at)?at:[]).map(dec);
       this.estados=e;this.deputados=d;this.senadores=s;this.partidos=p||{};this.curadores=(Array.isArray(c)?c:[]).map(k=>{try{return /^npub1/.test(k)&&window.NostrTools?window.NostrTools.nip19.decode(k).data:k}catch(x){return k}});
       if(S.cidade)this.loadMun(S.cidade.uf); scheduleRender();
     }catch(e){}
@@ -1078,7 +1065,10 @@ const emailOficial=e=>ehOficial(((e||"").split("@")[1]||"").toLowerCase());
 const isCurador=pk=>Dados.curadores.includes(pk);
 const LIMITE_DIA=10, IDADE_MIN_DIAS=3;
 function idadeDias(pk){const t=Nostr.primeiro&&Nostr.primeiro[pk];if(!Nostr.ready)return 99;if(!t)return 0;return (Date.now()/1000-t)/86400}
-function pesoVoto(pk){if(isCurador(pk))return 3;return idadeDias(pk)<IDADE_MIN_DIAS?0:1}
+function atestado(pk){return S.atestados.some(a=>a.id===pk&&Dados.atestadores.includes(a._autor)&&!a.revogado)}
+const govbrAtivo=()=>Dados.atestadores.length>0;
+function pesoVoto(pk){if(isCurador(pk))return 3;if(govbrAtivo())return atestado(pk)?1:0;return idadeDias(pk)<IDADE_MIN_DIAS?0:1}
+const podeConferir=pk=>isCurador(pk)||(govbrAtivo()?atestado(pk):true);
 function autorDe(c){return c._autor||c.autor}
 function avaliar(c){
   const autor=autorDe(c);
@@ -1112,7 +1102,7 @@ function curto(pk){return pk?pk.slice(0,8)+"…":"?"}
 const REGRAS_HTML=`<details class="acc"><summary>Como evitamos erros e fraudes</summary><div class="body" style="font-size:.92rem">
   <p><b>Dado oficial vem primeiro.</b> Eleitos, partidos e mandatos vêm do TSE, da Câmara e do Senado e não podem ser editados. Moradores só podem anexar um alerta, com fonte, se alguém deixou o cargo.</p>
   <p><b>Toda contribuição precisa de fonte.</b> Link de site oficial (.gov.br, .leg.br, .jus.br, .mp.br) ou de diário oficial exige 3 conferências. Qualquer outra fonte, ou nenhuma, exige 5. E-mail fora de domínio oficial também exige 5.</p>
-  <p><b>Conferência independente.</b> Quem contribui não confere o próprio dado. Cada chave confere uma vez. Chaves com menos de ${IDADE_MIN_DIAS} dias na rede podem contribuir, mas suas conferências não contam.</p>
+  <p><b>Conferência independente.</b> Quem contribui não confere o próprio dado. Cada conta confere uma vez. Contas com menos de ${IDADE_MIN_DIAS} dias na rede podem contribuir, mas suas conferências ainda não contam.</p>
   <p><b>Contestação.</b> Duas contestações fundamentadas que superem as confirmações tiram o dado de uso até nova conferência.</p>
   <p><b>Divergência.</b> Se dois valores diferentes forem verificados, o app mostra o mais conferido e avisa que há divergência.</p>
   <p><b>Limites e curadoria.</b> Cada chave faz até ${LIMITE_DIA} contribuições por dia. Curadores identificados podem confirmar ou retirar dados, sempre de forma registrada.</p>
@@ -1162,7 +1152,7 @@ function meuVoto(cid){return S.cvotos.find(v=>v.c===cid&&v.uid===S.uid)}
 function openRevisar(cid){
   const c=S.contribs.find(x=>x.id===cid); if(!c)return; const a=avaliar(c); const meu=meuVoto(cid); const proprio=autorDe(c)===S.uid;
   const votos=S.cvotos.filter(v=>v.c===cid);
-  const novo=idadeDias(S.uid)<IDADE_MIN_DIAS&&!isCurador(S.uid);
+  const novo=!podeConferir(S.uid);
   openSheet("Conferir informação",`
     <span class="eyebrow">${esc(c.rotulo||"")}</span><h2>${esc(valorTxt(c))}</h2>
     <div class="row">${stPill(a)}${a.motivo?`<span class="muted">${esc(a.motivo)}</span>`:""}</div>
@@ -1174,8 +1164,8 @@ function openRevisar(cid){
     ${votos.filter(v=>v.v<0&&v.motivo).length?`<div class="stack" style="gap:6px"><b>Motivos das contestações</b>${votos.filter(v=>v.v<0&&v.motivo).map(v=>`<p class="muted" style="font-size:.88rem">“${esc(v.motivo)}” — <span class="mono">${esc(curto(v.uid))}</span></p>`).join("")}</div>`:""}
     ${proprio?`<p class="muted">Você enviou esta informação, então não pode conferi-la.</p>`:`
       <div class="why"><b>Antes de responder</b>, abra a fonte e confira se o dado está lá. Confirmar sem conferir prejudica todo mundo.</div>
-      ${novo?`<p class="muted" style="font-size:.86rem">Sua chave tem menos de ${IDADE_MIN_DIAS} dias na rede: sua conferência fica registrada, mas só passa a contar depois desse prazo.</p>`:""}
-      <div class="row"><button class="btn primary" id="rvSim" ${meu&&meu.v>0?"disabled":""}>Conferi: está certo</button><button class="btn" id="rvNao">Está errado</button>${meu?`<button class="btn ghost" id="rvDes">Desfazer minha conferência</button>`:""}</div>
+      ${novo?`<div class="notice"><b>Conferência com gov.br</b><span>Para conferir dados, vincule sua conta gov.br no Perfil. Assim cada pessoa confere uma única vez e ninguém infla o resultado com contas falsas.</span></div>`:`${pesoVoto(S.uid)===0?`<p class="muted" style="font-size:.86rem">Sua conta tem menos de ${IDADE_MIN_DIAS} dias na rede: sua conferência fica registrada, mas só passa a contar depois desse prazo.</p>`:""}
+      <div class="row"><button class="btn primary" id="rvSim" ${meu&&meu.v>0?"disabled":""}>Conferi: está certo</button><button class="btn" id="rvNao">Está errado</button>${meu?`<button class="btn ghost" id="rvDes">Desfazer minha conferência</button>`:""}</div>`}
       <form id="rvMotivoF" class="stack" hidden><label class="f">O que está errado?<input type="text" id="rvMotivo" maxlength="200" placeholder="Ex.: a fonte mostra outro nome; exonerado em 10/2026"></label><button class="btn" type="submit">Enviar contestação</button><p class="muted" id="rvErr" role="alert" hidden></p></form>`}
     ${isCurador(S.uid)&&!proprio?`<button class="btn small" id="rvCur">Retirar (curadoria)</button>`:""}`,el=>{
       const vid=`${cid}__${S.uid}`;
@@ -1191,8 +1181,9 @@ function filaCidade(){
   const c=S.cidade; return S.contribs.filter(x=>(x.uf||"")===(c.uf||"")&&(x.cidade===c.nome||!/^sec-mun|^email/.test(x.alvo))).map(x=>({c:x,a:avaliar(x)})).filter(x=>x.a.st==="pendente"&&autorDe(x.c)!==S.uid&&!meuVoto(x.c.id));
 }
 function openFila(){
-  const f=filaCidade();
+  const f=filaCidade(); const pode=podeConferir(S.uid);
   openSheet("Conferir dados",`<p class="muted">Informações enviadas por moradores que ainda precisam de conferência. Abra a fonte de cada uma antes de responder.</p>
+    ${pode||!govbrAtivo()?"":`<div class="notice"><b>Só com gov.br</b><span>Você pode ver a fila, mas para conferir precisa vincular sua conta gov.br no Perfil.</span></div>`}
     ${f.length?`<div class="list">${f.map(x=>contribRow(x.c,x.a)).join("")}</div>`:`<p><b>Nada para conferir agora.</b></p>`}${REGRAS_HTML}`,el=>bindContribRows(el));
 }
 
@@ -1342,8 +1333,8 @@ function openProp(id){
 /* ---------- rede descentralizada (Nostr) para a versão instalável ---------- */
 const RELAYS=["wss://relay.damus.io","wss://nos.lol","wss://relay.primal.net"];
 const APP_TAG="cidadania-app-v1";
-const COLKEY={mural:"mural",propostas:"propostas",apoios:"apoios",diretorio:"diretorio",cidades_mundo:"cidadesMundo",contrib:"contribs",cvoto:"cvotos"};
-const CACHEKEY={mural:"cid.mural",propostas:"cid.prop",apoios:"cid.apoios",cidadesMundo:"cid.mundo",diretorio:"cid.dir",contribs:"cid.contrib",cvotos:"cid.cvoto"};
+const COLKEY={mural:"mural",propostas:"propostas",apoios:"apoios",diretorio:"diretorio",cidades_mundo:"cidadesMundo",contrib:"contribs",cvoto:"cvotos",atesta:"atestados"};
+const CACHEKEY={mural:"cid.mural",propostas:"cid.prop",apoios:"cid.apoios",cidadesMundo:"cid.mundo",diretorio:"cid.dir",contribs:"cid.contrib",cvotos:"cid.cvoto",atestados:"cid.atesta"};
 let renderTimer=null;
 function scheduleRender(){clearTimeout(renderTimer);renderTimer=setTimeout(()=>{const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&$("#app").contains(a)){scheduleRender();return}render()},250)}
 function cacheShared(key){lsSet(CACHEKEY[key],S[key])}
@@ -1628,7 +1619,7 @@ function viewPerfil(){
   const p=S.perfil; const all=S.reclamacoes;
   const cnt=k=>all.filter(r=>statusOf(r).k===k).length;
   let list=all; if(perfFiltro!=="todas")list=all.filter(r=>statusOf(r).k===perfFiltro);
-  return `<div class="person"><span class="avatar" style="background:var(--accent);color:var(--accent-ink);width:56px;height:56px;font-size:1.2rem">${esc((p.nome||"?").split(" ").map(x=>x[0]).slice(0,2).join(""))}</span><div class="grow"><h2>${esc(p.nome)}</h2><span class="muted">${p.via==="gov.br"?"Conta gov.br (simulada)":"Conta por e-mail"} · desde ${fmtDate(p.desde||Date.now())}</span></div></div>
+  return `<div class="person"><span class="avatar" style="background:var(--accent);color:var(--accent-ink);width:56px;height:56px;font-size:1.2rem">${esc((p.nome||"?").split(" ").map(x=>x[0]).slice(0,2).join(""))}</span><div class="grow"><h2>${esc(p.nome)}</h2><span class="muted">Conta por e-mail · desde ${fmtDate(p.desde||Date.now())}</span></div></div>
   <div class="stat-row"><div class="stat"><b>${all.length}</b><span>Cobranças</span></div><div class="stat"><b>${cnt("respondida")+cnt("resolvida")}</b><span>Com resposta</span></div><div class="stat"><b>${cnt("resolvida")}</b><span>Resolvidas</span></div><div class="stat"><b>${cnt("vencida")}</b><span>Prazo vencido</span></div></div>
   <section class="stack"><div class="section-head"><h2>Histórico</h2></div>
     <div class="seg" role="group">${[["todas","Todas"],["enviada","Aguardando"],["respondida","Respondidas"],["resolvida","Resolvidas"],["vencida","Vencidas"]].map(([k,n])=>`<button data-pf2="${k}" aria-pressed="${perfFiltro===k}">${n}</button>`).join("")}</div>
