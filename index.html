@@ -280,6 +280,7 @@ details.acc .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10p
 @media (prefers-reduced-motion:no-preference){.celebrate svg{animation:pop .5s cubic-bezier(.2,1.4,.4,1)}@keyframes pop{from{transform:scale(.6) rotate(-8deg)}to{transform:none}}}
 
 .avatar.grp{background:var(--ink);color:var(--paper);font-family:var(--f-mono);font-size:.82rem}
+.avatar{align-self:center;aspect-ratio:1/1}
 .avatar.empty{background:transparent;border:2px dashed var(--line);color:var(--muted)}
 .aud-date{flex:none;width:46px;border-radius:8px;background:var(--sunk);display:flex;flex-direction:column;align-items:center;padding:6px 0;line-height:1}
 .aud-date b{font:850 1.3rem var(--f-display);font-stretch:80%}
@@ -289,6 +290,35 @@ details.acc .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10p
 .landing .gate .wrap,.gate.landing .wrap{max-width:640px}
 .feat{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;font-size:.88rem}
 .feat b{font-family:var(--f-display);font-stretch:85%;font-size:1rem}
+.relate{border:2px solid var(--accent)}
+/* Telas largas: tela inicial em duas colunas e app com menu lateral */
+.ilu{width:100%;height:auto;max-width:100%;display:block;border-radius:18px}
+.feats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.feat .ico{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:var(--sunk);color:var(--accent)}
+.feat .ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ln-hero,.ln-two{display:flex;flex-direction:column;gap:22px}
+@media (min-width:960px){
+  .gate.landing .wrap{max-width:1120px;gap:36px}
+  .ln-hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:start}
+  .ln-form{position:sticky;top:20px}
+  .landing h1{font-size:3.1rem}
+  .landing .cat-grid{grid-template-columns:repeat(4,1fr)}
+  .ln-two{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+  .feats{grid-template-columns:repeat(4,1fr)}
+  .trust{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .trust h3{grid-column:1/-1}
+  nav.tabs{top:0;bottom:0;right:auto;width:220px;border-top:0;border-right:1px solid var(--line);padding-bottom:0}
+  nav.tabs .wrap{display:flex;flex-direction:column;height:auto;padding-top:76px;gap:4px;max-width:none}
+  nav.tabs a{flex-direction:row;justify-content:flex-start;gap:12px;font-size:.95rem;padding:10px 12px;border-top:0;border-left:3px solid transparent;margin:0;border-radius:0 8px 8px 0}
+  nav.tabs a[aria-current="page"]{border-left-color:var(--accent);background:var(--sunk)}
+  nav.tabs a.report .plus{margin-top:0;width:28px;height:28px}
+  header.top{padding-left:220px}
+  header.top .wrap,main .wrap{max-width:980px}
+  main{padding-left:220px;padding-bottom:48px}
+  .toast{bottom:24px}
+  #view .list:has(> .prop){display:grid;grid-template-columns:1fr 1fr}
+  #view .list:has(> .prop) > *{border-top:1px solid var(--line)}
+}
 </style>
 
 <div id="app"></div>
@@ -564,23 +594,50 @@ function render(){
 /* ---------- login ---------- */
 /* ---------- ENTRADA: apresenta o app antes de pedir qualquer dado ---------- */
 const CATS_VITRINE=["buraco","iluminacao","lixo","transporte","ubs","drenagem","seguranca","saneamento"];
+const ILU_CIDADE=`<svg class="ilu" viewBox="0 0 520 300" role="img" aria-label="Ilustração de uma rua da cidade com um buraco sinalizado, um poste e pessoas conversando">
+<rect x="0" y="0" width="520" height="300" rx="18" fill="var(--sunk)"/>
+<g fill="var(--line)"><rect x="18" y="70" width="70" height="150" rx="4"/><rect x="96" y="40" width="88" height="180" rx="4"/><rect x="330" y="56" width="80" height="164" rx="4"/><rect x="418" y="92" width="84" height="128" rx="4"/></g>
+<g fill="var(--surface)" opacity=".9">${[0,1,2,3,4].map(r=>[0,1].map(c=>`<rect x="${110+c*36}" y="${56+r*30}" width="22" height="16" rx="2"/>`).join("")).join("")}${[0,1,2,3].map(r=>`<rect x="${346}" y="${74+r*34}" width="20" height="16" rx="2"/><rect x="${376}" y="${74+r*34}" width="20" height="16" rx="2"/>`).join("")}</g>
+<rect x="196" y="120" width="122" height="100" rx="4" fill="var(--accent)"/><path d="M190 122l67-40 67 40z" fill="var(--accent)"/><g fill="var(--accent-ink)" opacity=".85"><rect x="212" y="140" width="12" height="60"/><rect x="236" y="140" width="12" height="60"/><rect x="260" y="140" width="12" height="60"/><rect x="284" y="140" width="12" height="60"/></g>
+<rect x="0" y="220" width="520" height="80" fill="var(--ink)" opacity=".86"/><g fill="var(--ipe)"><rect x="30" y="256" width="40" height="6" rx="2"/><rect x="110" y="256" width="40" height="6" rx="2"/><rect x="190" y="256" width="40" height="6" rx="2"/><rect x="430" y="256" width="40" height="6" rx="2"/></g>
+<ellipse cx="320" cy="262" rx="40" ry="10" fill="var(--paper)" opacity=".35"/><path d="M356 266l12-34 12 34z" fill="var(--ipe)"/><rect x="360" y="246" width="16" height="5" fill="var(--paper)"/>
+<rect x="458" y="120" width="6" height="100" fill="var(--muted)"/><path d="M461 120q0-18 22-18h10" stroke="var(--muted)" stroke-width="6" fill="none"/><circle cx="497" cy="108" r="9" fill="var(--paper)" stroke="var(--muted)" stroke-width="3"/>
+<g><circle cx="60" cy="196" r="10" fill="var(--est)"/><rect x="50" y="206" width="20" height="16" rx="6" fill="var(--est)"/><circle cx="88" cy="194" r="10" fill="var(--fed)"/><rect x="78" y="204" width="20" height="18" rx="6" fill="var(--fed)"/></g>
+<g><rect x="46" y="128" width="104" height="44" rx="12" fill="var(--surface)" stroke="var(--line)"/><path d="M70 172l-8 14 18-14z" fill="var(--surface)"/><path d="M64 150l8 8 16-18" stroke="var(--ok)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="96" y="142" width="44" height="6" rx="3" fill="var(--line)"/><rect x="96" y="154" width="32" height="6" rx="3" fill="var(--line)"/></g>
+</svg>`;
+const LS={texto:"",cidade:null,bairro:"",rua:"",nome:"",email:"",cat:null,foto:null};
+function guardaLS(){const g=id=>{const e=$("#"+id);return e?e.value:undefined};const t=g("qrTexto");if(t!==undefined)LS.texto=t;const b=g("qrBairro");if(b!==undefined)LS.bairro=b;const r=g("qrRua");if(r!==undefined)LS.rua=r;const n=g("qrNome");if(n!==undefined)LS.nome=n;const m=g("qrEmail");if(m!==undefined)LS.email=m}
 function viewLanding(){
   return `<div class="gate landing"><div class="wrap">
     <div class="row"><span class="brand"><span class="brand-mark" aria-hidden="true"></span>Cidadania</span><button class="btn ghost small" id="lnEntrar" style="margin-left:auto">Entrar</button></div>
-    <section class="stack" style="gap:14px">
+    <div class="ln-hero"><div class="ln-intro stack" style="gap:14px">
       <h1>Cobre quem é responsável pelo que está errado na sua cidade.</h1>
       <p class="lead">O Cidadania mostra qual órgão resolve cada problema, prepara a reclamação com o prazo legal de resposta e acompanha até ser resolvido. Gratuito, sem anúncios, para os 5.570 municípios do Brasil.</p>
-    </section>
-    <section class="card stack">
-      <label class="f" style="font-size:1rem">Comece pela sua cidade<input type="search" id="cityQ" placeholder="Digite o nome da cidade" autocomplete="off"></label>
-      <div class="list" id="cityRes"></div>
-      <p class="muted" style="font-size:.84rem">Não precisa de cadastro para conhecer. Você só cria a conta quando quiser enviar uma reclamação ou participar.</p>
-    </section>
+      ${ILU_CIDADE}
+    </div><div class="ln-form">
+    <section class="card stack relate" id="relateCard">
+      <h2>Relate agora</h2>
+      <label class="f">O que está acontecendo?<textarea id="qrTexto" style="min-height:96px" placeholder="Ex.: Há um buraco grande no asfalto há três semanas. Dois motociclistas já caíram.">${esc(LS.texto)}</textarea></label>
+      ${LS.cat?`<p class="muted" style="font-size:.86rem">Tipo escolhido: <b>${esc(CAT[LS.cat].n)}</b> · <button class="btn ghost small" id="qrCatX" type="button" style="padding:0 4px;min-height:0">trocar</button></p>`:""}
+      <label class="f">Cidade${LS.cidade?"":` <small>Digite e escolha na lista.</small>`}
+        ${LS.cidade?`<span class="row" style="gap:8px"><b>${esc(cidadeNome(LS.cidade))}</b><button class="btn ghost small" id="qrCidX" type="button">trocar</button></span>`:`<input type="search" id="cityQ" placeholder="Ex.: Ouro Preto, Niterói, Juazeiro…" autocomplete="off">`}</label>
+      ${LS.cidade?"":`<div class="list" id="cityRes"></div>`}
+      <div class="grid2"><label class="f">Bairro<input type="text" id="qrBairro" value="${esc(LS.bairro)}"></label><label class="f">Rua ou ponto de referência<input type="text" id="qrRua" value="${esc(LS.rua)}"></label></div>
+      <label class="f">Foto ou vídeo <small>Opcional, mas ajuda muito.</small><input type="file" id="qrFoto" accept="image/*,video/*"></label>
+      <details class="acc" ${LS.nome||LS.email?"open":""}><summary>Seu nome e e-mail (opcional agora)</summary><div class="body">
+        <p class="muted" style="font-size:.86rem">Para enviar a cobrança identificada e acompanhar a resposta. Também dá para informar depois, ou enviar anônimo.</p>
+        <label class="f">Nome<input type="text" id="qrNome" autocomplete="name" value="${esc(LS.nome)}"></label>
+        <label class="f">E-mail<input type="email" id="qrEmail" autocomplete="email" value="${esc(LS.email)}"></label></div></details>
+      <p class="muted" id="qrErr" role="alert" hidden></p>
+      <button class="btn primary block" id="qrIr">Ver quem resolve e preparar a cobrança</button>
+      <p class="muted" style="font-size:.84rem">Nada é enviado ainda. No próximo passo você vê o órgão responsável e a mensagem pronta, e decide como enviar.</p>
+    </section></div></div>
     <section class="stack"><h2>O que você pode relatar</h2>
       <div class="cat-grid">${CATS_VITRINE.map(k=>{const c=CAT[k];return `<button data-lcat="${k}"><span class="esf ${c.e}" data-l="${ESF[c.e].l}">${ESF[c.e].n}</span>${esc(c.n)}<span class="muted" style="font-weight:400;font-size:.78rem">${esc(c.org)}</span></button>`}).join("")}</div>
+      <p class="muted" style="font-size:.86rem">Toque num tipo para começar o relato com ele.</p>
       <p class="muted" style="font-size:.86rem">E mais ${CATS.length-CATS_VITRINE.length} tipos, de INSS a desmatamento. Para cada um, o app explica por que o problema é da prefeitura, do estado ou da União.</p>
     </section>
-    <section class="stack"><h2>Como funciona</h2>
+    <div class="ln-two"><section class="stack"><h2>Como funciona</h2>
       <ol class="flow">
         <li><div><b>Relate com foto ou vídeo</b><br><span class="muted">Descreva o problema e onde ele está: rua, bairro, ponto de referência.</span></div></li>
         <li><div><b>Descubra quem resolve</b><br><span class="muted">O app indica o órgão responsável e os nomes reais de quem governa e fiscaliza, a partir dos dados do TSE, da Câmara e do Senado.</span></div></li>
@@ -589,16 +646,11 @@ function viewLanding(){
     </section>
     <section class="stack"><span class="eyebrow">Exemplo de cobrança acompanhada no app</span>
       <div class="list"><div class="item-btn" style="cursor:default"><span class="grow stack" style="gap:4px"><b>Buraco grande na Rua São José, em frente ao nº 120</b><span class="row" style="gap:6px"><span class="esf municipal" data-l="M">Municipal</span><span class="pill s-enviada"><i></i>Aguardando · 18 d</span></span><span class="muted" style="font-size:.86rem">Secretaria Municipal de Obras e Infraestrutura · prazo de 30 dias pela Lei 13.460/2017</span></span></div></div>
-    </section>
+    </section></div>
     <section class="stack"><h2>Mais que reclamar</h2>
-      <div class="quick" style="grid-template-columns:repeat(2,1fr)">
-        <div class="feat"><b>Mural do bairro</b><span class="muted">Veja o que os vizinhos relataram e apoie quem tem o mesmo problema.</span></div>
-        <div class="feat"><b>Seus representantes</b><span class="muted">Prefeito, vereadores, deputados e senadores, com projetos, votos e contato.</span></div>
-        <div class="feat"><b>Audiências públicas</b><span class="muted">Datas, como participar e como pedir uma audiência sobre o seu problema.</span></div>
-        <div class="feat"><b>Escola Cívica</b><span class="muted">Aulas curtas sobre como a política chega à sua rua, com badges.</span></div>
-      </div>
+      <div class="feats"><div class="feat"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H4z"/><path d="M8 21h8M12 17v4"/><path d="M8 9h8M8 13h5"/></svg></span><b>Mural do bairro</b><span class="muted">Veja o que os vizinhos relataram e apoie quem tem o mesmo problema.</span></div><div class="feat"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M4 10h16"/><path d="M12 3l9 5H3z"/><path d="M6 10v8M10 10v8M14 10v8M18 10v8"/></svg></span><b>Seus representantes</b><span class="muted">Prefeito, vereadores, deputados e senadores, com projetos, votos e contato.</span></div><div class="feat"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><b>Audiências públicas</b><span class="muted">Datas, como participar e como pedir uma audiência sobre o seu problema.</span></div><div class="feat"><span class="ico"><svg viewBox="0 0 24 24"><path d="M2 8l10-5 10 5-10 5z"/><path d="M6 10v5c0 2 3 3.5 6 3.5s6-1.5 6-3.5v-5"/></svg></span><b>Escola Cívica</b><span class="muted">Aulas curtas sobre como a política chega à sua rua, com badges.</span></div></div>
     </section>
-    <section class="card stack" style="gap:8px"><h3>Por que confiar</h3>
+    <section class="card stack trust" style="gap:8px"><h3>Por que confiar</h3>
       <p style="font-size:.92rem"><b>Dados oficiais.</b> Eleitos, partidos, projetos e votações vêm do TSE, da Câmara dos Deputados e do Senado Federal, atualizados todo dia.</p>
       <p style="font-size:.92rem"><b>Seus dados ficam com você.</b> Nome, CPF e cobranças ficam guardados no seu aparelho. O mural público nunca mostra quem relatou.</p>
       <p style="font-size:.92rem"><b>Aberto.</b> Gratuito, sem anúncios e com código aberto: qualquer pessoa pode conferir como o app funciona no <a href="https://github.com/ThePhilosopherX/cidadania" target="_blank" rel="noopener">GitHub</a>.</p>
@@ -608,11 +660,25 @@ function viewLanding(){
 }
 function entrarComoVisitante(){S.perfil={nome:"",email:"",convidado:true};lsSet("cid.visitante",true)}
 function bindLanding(){
-  bindCidade($("#app"),"landing");
+  if(!LS.cidade)bindCidade($("#app"),"landing");
+  const cx=$("#qrCidX");if(cx)cx.onclick=()=>{guardaLS();LS.cidade=null;render();setTimeout(()=>{const q=$("#cityQ");if(q)q.focus()},40)};
+  const kx=$("#qrCatX");if(kx)kx.onclick=()=>{guardaLS();LS.cat=null;render()};
+  $("#qrFoto").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{LS.foto=await storeMedia(f)}catch(x){toast("Não foi possível ler o arquivo")}};
+  ["qrTexto","qrBairro","qrRua","qrNome","qrEmail"].forEach(id=>{const el=$("#"+id);if(el)el.oninput=guardaLS});
+  $("#qrIr").onclick=async()=>{guardaLS();const er=$("#qrErr");const show=m=>{er.hidden=false;er.textContent=m};
+    const texto=LS.texto.trim(); if(texto.length<15)return show("Conte em pelo menos uma frase o que está acontecendo.");
+    if(!LS.cidade)return show("Escolha a cidade na lista.");
+    const nome=LS.nome.trim(),email=LS.email.trim(); if((nome||email)&&(!nome||!/^\S+@\S+\.\S+$/.test(email)))return show("Para se identificar, preencha nome e um e-mail válido. Ou deixe os dois em branco.");
+    S.cidade=LS.cidade;lsSet("cid.cidade",S.cidade);Dados.loadMun(S.cidade.uf);
+    if(nome){await Store.savePerfil({nome,email,via:"email",desde:Date.now()});S.tutorialVisto=true;lsSet("cid.tut",true)} else entrarComoVisitante();
+    const d=novoDraft(); const primeira=texto.split(/(?<=[.!?])\s/)[0];
+    Object.assign(d,{titulo:primeira.length>90?primeira.slice(0,87)+"…":primeira,texto,bairro:limpaRegiao(LS.bairro),rua:limpaRegiao(LS.rua),midia:LS.foto?[LS.foto]:[]});
+    d.cat=LS.cat||classify(texto+" "+LS.rua); d.catAuto=!LS.cat; d.passo=3; S.draft=d;
+    location.hash="relatar"; render(); window.scrollTo(0,0)};
   $("#lnExplorar").onclick=()=>{entrarComoVisitante();render();if(!S.cidade)setTimeout(()=>{const q=$("#cityQ");if(q)q.focus()},50)};
   $("#lnConta").onclick=()=>openLoginSheet("criar sua conta",()=>render());
   $("#lnEntrar").onclick=()=>openLoginSheet("entrar",()=>render());
-  document.querySelectorAll("[data-lcat]").forEach(b=>b.onclick=()=>{entrarComoVisitante();S.draft=novoDraft();S.draft.cat=b.dataset.lcat;S.draft.catAuto=false;location.hash="relatar";render()});
+  document.querySelectorAll("[data-lcat]").forEach(b=>b.onclick=()=>{guardaLS();LS.cat=b.dataset.lcat;render();const c=$("#relateCard");if(c)c.scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>{const t=$("#qrTexto");if(t)t.focus()},300)});
 }
 function openLoginSheet(motivo,depois){
   const sug=S.perfilSugestao||{};
@@ -704,7 +770,7 @@ function bindCidade(root,gate){
     if(v.length>=2){list=[...world.filter(c=>norm(c.nome+" "+c.pais).includes(v)),...CITIES.filter(c=>norm(c.nome).startsWith(v)),...CITIES.filter(c=>!norm(c.nome).startsWith(v)&&norm(c.nome).includes(v))].slice(0,12)}
     else list=[{nome:"Rio de Janeiro",uf:"RJ"},{nome:"São Paulo",uf:"SP"},{nome:"Belo Horizonte",uf:"MG"},{nome:"Ouro Preto",uf:"MG"},{nome:"Salvador",uf:"BA"},{nome:"Recife",uf:"PE"}];
     res.innerHTML=list.length?list.map((c,i)=>`<button class="item-btn" data-i="${i}"><span class="grow"><b>${esc(c.nome)}</b> <span class="muted">${esc(c.pais?`${c.uf?c.uf+", ":""}${c.pais}`:UFS[c.uf]||c.uf)}</span></span></button>`).join(""):`<p class="muted">Nenhuma cidade com esse nome. Confira a grafia ou adicione abaixo, se for fora do Brasil.</p>`;
-    res.querySelectorAll("button").forEach(b=>b.onclick=()=>{const c=list[+b.dataset.i];S.cidade=c;lsSet("cid.cidade",c);Dados.loadMun(c.uf);if(gate==="landing"&&!S.perfil)entrarComoVisitante();if(!gate)closeSheet();toast("Cidade: "+cidadeNome());render()});
+    res.querySelectorAll("button").forEach(b=>b.onclick=()=>{const c=list[+b.dataset.i];if(gate==="landing"){guardaLS();LS.cidade=c;Dados.loadMun(c.uf);render();return}S.cidade=c;lsSet("cid.cidade",c);Dados.loadMun(c.uf);if(!gate)closeSheet();toast("Cidade: "+cidadeNome());render()});
   };
   q.oninput=show; show(); if(!gate)setTimeout(()=>q.focus(),50);
   const fm=$("#fMundo",root); if(fm)fm.onsubmit=async e=>{e.preventDefault();const nome=$("#mdNome",root).value.trim(),pais=$("#mdPais",root).value.trim(),regiao=$("#mdReg",root).value.trim();
