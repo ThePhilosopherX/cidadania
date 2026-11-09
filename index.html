@@ -949,7 +949,7 @@ function openEscalar(r){
     <li><div><b>Tribunal de Contas</b><br><span class="muted">Se houver suspeita de mau uso de dinheiro público ou obra paga e não entregue.</span></div></li></ol>
     <h3>Mensagem pronta para ${esc(fisc.nome)}</h3>
     <div class="mail"><pre id="escTxt">${esc(txt)}</pre></div>
-    <div class="row"><button class="btn primary" id="escCopy">Copiar mensagem</button><button class="btn" data-pid="${fisc.id}">${fisc.grupo?"Ver a lista e escolher a quem enviar":"Ver ficha do parlamentar"}</button></div>
+    <div class="row">${emailsDe([fisc]).length?`<a class="btn primary" href="${esc(mailtoHref(emailsDe([fisc]).length===1?{to:emailsDe([fisc]),subject:"Cobrança sem resposta: "+r.titulo,body:txt}:{bcc:emailsDe([fisc]),subject:"Cobrança sem resposta: "+r.titulo,body:txt}))}">${emailsDe([fisc]).length===1?"Abrir no app de e-mail":`Enviar por e-mail (${emailsDe([fisc]).length})`}</a>`:""}<button class="btn ${emailsDe([fisc]).length?"":"primary"}" id="escCopy">Copiar mensagem</button><button class="btn" data-pid="${fisc.id}">${fisc.grupo?"Ver a lista e escolher a quem enviar":"Ver ficha do parlamentar"}</button></div>
     ${Dados.disp?"":`<p class="muted" style="font-size:.82rem"><span class="pill demo">Demonstração</span> Parlamentar fictício neste modo.</p>`}`,el=>{
       $("#escCopy",el).onclick=()=>copyText(txt,$("#escTxt",el)); bindPeople(el);
     });
@@ -1099,7 +1099,9 @@ function responsaveis(cat,city){
 const OFICIAIS=["gov.br","leg.br","jus.br","mp.br","def.br","mil.br"];
 const DIARIOS=["diariomunicipal","diariooficial","imprensaoficial","doem.","dom.","doe."];
 function hostOf(u){try{const x=new URL(u);return /^https?:$/.test(x.protocol)?x.hostname.toLowerCase():""}catch(e){return ""}}
-const ehOficial=h=>OFICIAIS.some(s=>h===s||h.endsWith("."+s));
+/* Domínios oficiais fora de .gov.br, conferidos um a um (o Rio usa .rio). */
+const OFICIAIS_EXTRA=["prefeitura.rio","camara.rio","1746.rio","carioca.rio"];
+const ehOficial=h=>OFICIAIS.some(s=>h===s||h.endsWith("."+s))||OFICIAIS_EXTRA.some(s=>h===s||h.endsWith("."+s));
 function fonteTipo(u){const h=hostOf(u);if(!h)return "nenhuma";if(ehOficial(h))return "oficial";if(DIARIOS.some(d=>h.includes(d)))return "diario";return "outra"}
 const FONTE_TXT={oficial:"Fonte oficial",diario:"Diário oficial",outra:"Fonte não oficial",nenhuma:"Sem fonte"};
 const emailOk=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e||"");
@@ -1119,6 +1121,7 @@ function avaliar(c){
   if(doDia>LIMITE_DIA)return {st:"recusado",motivo:"A mesma chave passou do limite de contribuições por dia.",conf:0,cont:0,precisa:0};
   const ft=fonteTipo(c.fonte); let precisa=ft==="oficial"||ft==="diario"?3:5;
   if(c.campo==="email"&&!emailOficial(c.valor))precisa=Math.max(precisa,5);
+  if(c.campo==="contato"&&c.valor&&c.valor.email&&!emailOficial(c.valor.email))precisa=Math.max(precisa,5);
   let conf=0,cont=0,curOk=false,curNo=false,nconf=0,ncont=0;
   for(const v of S.cvotos){if(v.c!==c.id||v.uid===autor)continue;const w=pesoVoto(v.uid);
     if(v.v>0){conf+=w;nconf++;if(isCurador(v.uid))curOk=true}else{cont+=w;ncont++;if(isCurador(v.uid))curNo=true}}
@@ -1139,7 +1142,7 @@ function valorDe(alvo){
 const ST_TXT={verificado:"Verificado",pendente:"Aguardando conferência",contestado:"Contestado",removido:"Removido pela curadoria",recusado:"Recusado"};
 const ST_CLS={verificado:"s-resolvida",pendente:"s-enviada",contestado:"s-vencida",removido:"s-rascunho",recusado:"s-rascunho"};
 function stPill(a){return `<span class="pill ${ST_CLS[a.st]}"><i></i>${ST_TXT[a.st]}${a.st==="pendente"?` · ${Math.floor(a.conf)}/${a.precisa}`:""}</span>`}
-function valorTxt(c){return c.campo==="canal"?`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.telefone?" · "+c.valor.telefone:""}${c.valor&&c.valor.url?" · "+(hostOf(c.valor.url)||c.valor.url):""}`:c.campo==="email"?c.valor:c.campo==="aviso"?(c.valor&&c.valor.texto)||"":`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.partido?" ("+c.valor.partido+")":""}`}
+function valorTxt(c){return c.campo==="contato"?[c.valor&&c.valor.email,c.valor&&c.valor.telefone,c.valor&&c.valor.site&&(hostOf(c.valor.site)||c.valor.site)].filter(Boolean).join(" · "):c.campo==="canal"?`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.telefone?" · "+c.valor.telefone:""}${c.valor&&c.valor.url?" · "+(hostOf(c.valor.url)||c.valor.url):""}`:c.campo==="email"?c.valor:c.campo==="aviso"?(c.valor&&c.valor.texto)||"":`${(c.valor&&c.valor.nome)||""}${c.valor&&c.valor.partido?" ("+c.valor.partido+")":""}`}
 function curto(pk){return pk?pk.slice(0,8)+"…":"?"}
 const REGRAS_HTML=`<details class="acc"><summary>Como evitamos erros e fraudes</summary><div class="body" style="font-size:.92rem">
   <p><b>Dado oficial vem primeiro.</b> Eleitos, partidos e mandatos vêm do TSE, da Câmara e do Senado e não podem ser editados. Moradores só podem anexar um alerta, com fonte, se alguém deixou o cargo.</p>
@@ -1166,6 +1169,10 @@ const GUIA={
    ["Página do órgão","Procure “Fale conosco”, “Contato” ou “Ouvidoria” no site oficial."],
    ["Carta de Serviços ao Usuário","A Lei 13.460/2017 obriga cada órgão a publicar seus canais de atendimento nessa carta. Ela costuma estar no rodapé do site."],
    ["Prefira domínio oficial","Endereços terminados em .gov.br, .leg.br ou .jus.br passam com menos conferências. E-mail pessoal ou de provedor gratuito exige mais conferências e pode ser contestado."]]},
+ "contato":{t:"Contato de político",onde:[
+   ["Site da Câmara Municipal ou da Assembleia","A página de cada vereador ou deputado estadual costuma trazer o e-mail e o telefone do gabinete."],
+   ["Site da prefeitura ou do governo","O gabinete do prefeito ou do governador aparece em “Gabinete”, “Agenda” ou “Contato”."],
+   ["Perfis oficiais","Perfis verificados do próprio político às vezes indicam o e-mail do gabinete. Prefira sempre o endereço de domínio oficial (.leg.br, .gov.br)."]]},
  "canal":{t:"Central de atendimento da cidade",onde:[
    ["Site da prefeitura","Procure “Atendimento ao cidadão”, “Ouvidoria”, “Fale com a prefeitura” ou um número de três dígitos, como 156."],
    ["Carta de Serviços ao Usuário","A Lei 13.460/2017 obriga a prefeitura a publicar seus canais de atendimento. O documento costuma estar no site da ouvidoria ou da controladoria."],
@@ -1199,6 +1206,7 @@ function openComoContribuir(){
 function openContrib(op){
   const tipo=op.campo;
   const campos=tipo==="email"?`<label class="f">E-mail oficial do órgão<input type="email" id="ctVal" value="${esc(op.valor||"")}" placeholder="ouvidoria@prefeitura.gov.br"></label>`
+    :tipo==="contato"?`<label class="f">E-mail do gabinete<input type="email" id="ctVal" placeholder="nome@camara.cidade.mg.gov.br"></label><label class="f">Telefone do gabinete<input type="tel" id="ctTel"></label><label class="f">Página oficial (link)<input type="text" inputmode="url" id="ctUrl" placeholder="https://…leg.br/…"></label>`
     :tipo==="canal"?`<label class="f">Nome da central<input type="text" id="ctVal" placeholder="Ex.: Central 156, Ouvidoria Municipal"></label><label class="f">Site ou aplicativo (link)<input type="text" inputmode="url" id="ctUrl" placeholder="https://…"></label><label class="f">Telefone (se houver)<input type="tel" id="ctTel" placeholder="Ex.: 156"></label>`
     :tipo==="aviso"?`<label class="f">O que mudou?<textarea id="ctVal" style="min-height:80px" placeholder="Ex.: renunciou em 03/2026; assumiu o vice."></textarea></label>`
     :`<label class="f">Nome de quem ocupa o cargo hoje<input type="text" id="ctVal"></label><label class="f">Partido (sigla, se houver)<input type="text" id="ctPart" maxlength="12"></label>`;
@@ -1223,7 +1231,8 @@ function openContrib(op){
         const raw=$("#ctVal",el).value.trim(); const fonte=fonteIn.value.trim();
         if(fonte&&!hostOf(fonte))return show("O link precisa começar com https://.");
         let valor;
-        if(tipo==="canal"){const u=$("#ctUrl",el).value.trim(),tel=$("#ctTel",el).value.trim();if(raw.length<3)return show("Escreva o nome da central.");if(!u&&!tel)return show("Informe o link ou o telefone da central.");if(u&&!hostOf(u))return show("O link da central precisa começar com https://.");valor={nome:raw,url:u,telefone:tel}}
+        if(tipo==="contato"){const tel=$("#ctTel",el).value.trim(),u=$("#ctUrl",el).value.trim();if(!raw&&!tel&&!u)return show("Informe ao menos o e-mail, o telefone ou a página.");if(raw&&!emailOk(raw))return show("Escreva um e-mail completo.");if(u&&!hostOf(u))return show("O link da página precisa começar com https://.");valor={email:raw.toLowerCase(),telefone:tel,site:u}}
+        else if(tipo==="canal"){const u=$("#ctUrl",el).value.trim(),tel=$("#ctTel",el).value.trim();if(raw.length<3)return show("Escreva o nome da central.");if(!u&&!tel)return show("Informe o link ou o telefone da central.");if(u&&!hostOf(u))return show("O link da central precisa começar com https://.");valor={nome:raw,url:u,telefone:tel}}
         else if(tipo==="email"){if(!emailOk(raw))return show("Escreva um e-mail completo, como ouvidoria@cidade.mg.gov.br.");valor=raw.toLowerCase()}
         else if(tipo==="aviso"){if(raw.length<10)return show("Descreva a mudança em pelo menos uma frase.");if(!fonte)return show("Alertas sobre dados oficiais precisam de link da fonte.");valor={texto:raw}}
         else{if(raw.split(" ").length<2)return show("Escreva nome e sobrenome.");valor={nome:raw,partido:$("#ctPart",el).value.trim().toUpperCase()}}
@@ -1326,11 +1335,34 @@ function personRow(p,papel){
   const ini=p.nome.split(" ").map(x=>x[0]).slice(0,2).join("");
   return `<button class="item-btn person" data-pid="${p.id}"><span class="avatar" style="background:${p.cor}">${esc(ini)}</span><span class="grow"><b>${esc(p.nome)}</b> <span class="muted mono">${esc(p.partido.s)}</span>${p.crowd?' <span class="pill s-resolvida" style="font-size:.68rem"><i></i>Conferido</span>':""}<br><span class="muted" style="font-size:.86rem">${esc(p.cargo)}${papel?" · "+esc(papel):""}</span></span></button>`;
 }
+function contatoDe(p){
+  const c={email:p.email||"",telefone:"",site:p.url||"",emailOrigem:p.email?"oficial":""};
+  if(!p.id)return c; const v=valorDe("contato|"+p.id);
+  if(v.ver){const x=v.ver.c.valor||{};if(!c.email&&x.email){c.email=x.email;c.emailOrigem="comunidade"}if(x.telefone)c.telefone=x.telefone;if(!c.site&&x.site)c.site=x.site}
+  c.pend=v.pend.length; return c;
+}
+function mailtoHref({to=[],bcc=[],subject="",body=""}){const q=[];if(bcc.length)q.push("bcc="+encodeURIComponent(bcc.join(",")));q.push("subject="+encodeURIComponent(subject));q.push("body="+encodeURIComponent(body.slice(0,1500)));return `mailto:${to.map(encodeURIComponent).join(",")}?${q.join("&")}`}
+function assuntoEleitor(){return `Mensagem de ${S.perfil.cidadeVoto?"eleitor(a) de "+S.perfil.cidadeVoto:"morador(a) de "+cidadeNome()}`}
+function emailsDe(lista){return uniq(lista.filter(Boolean).flatMap(x=>x.grupo?x.lista:[x]).map(x=>contatoDe(x).email).filter(emailOk))}
+function blocoEnvio(destinos,texto,idp){
+  const em=emailsDe(destinos); const um=em.length===1;
+  return `<label class="f">Mensagem <small>Edite o texto antes de enviar.</small><textarea id="${idp}T" style="min-height:180px">${esc(texto)}</textarea></label>
+  <div class="row">${em.length?`<a class="btn primary" id="${idp}Mail" href="${esc(mailtoHref(um?{to:em,subject:assuntoEleitor(),body:texto}:{bcc:em,subject:assuntoEleitor(),body:texto}))}">${um?"Abrir no app de e-mail":`Enviar a todos por e-mail (${em.length})`}</a>`:""}<button class="btn" id="${idp}Copy" type="button">Copiar mensagem</button>${em.length>1?`<button class="btn ghost" id="${idp}Emails" type="button">Copiar os ${em.length} e-mails</button>`:""}</div>
+  ${em.length>1?`<p class="muted" style="font-size:.84rem">Os destinatários vão em cópia oculta, para que cada um receba como mensagem individual.</p>`:""}
+  ${!em.length?`<p class="muted" style="font-size:.86rem">Ainda não há e-mail cadastrado para ${destinos.length>1||destinos[0]?.grupo?"estes destinatários":"esta pessoa"}. Copie a mensagem e envie pelo canal que tiver, ou informe o contato na ficha para os próximos moradores.</p>`:""}`;
+}
+function bindEnvio(el,destinos,idp){
+  const em=emailsDe(destinos); const ta=$("#"+idp+"T",el); const a=$("#"+idp+"Mail",el);
+  if(ta&&a)ta.oninput=()=>{a.href=mailtoHref(em.length===1?{to:em,subject:assuntoEleitor(),body:ta.value}:{bcc:em,subject:assuntoEleitor(),body:ta.value})};
+  const c=$("#"+idp+"Copy",el);if(c)c.onclick=()=>copyText(ta.value,ta);
+  const ce=$("#"+idp+"Emails",el);if(ce)ce.onclick=()=>copyText(em.join(", "));
+}
 const VOTO={"Sim":["sim","SIM"],"Não":["nao","NÃO"],"Abstenção":["abst","ABST."],"Obstrução":["abst","OBSTR."],"Artigo 17":["aus","ART. 17"]};
 function openPerson(p){
   if(!p)return;
-  if(p.grupo){openSheet(p.nome,`<p class="muted">${esc(p.cargo)} · Fonte: ${esc(p.fonte)}</p><label class="f">Buscar<input type="search" id="gq" placeholder="Nome ou partido"></label><div class="list" id="gl">${p.lista.map(x=>personRow(x)).join("")}</div>`,el=>{
-    registerPeople(p.lista);bindPeople(el);$("#gq",el).oninput=e=>{const q=norm(e.target.value);$("#gl",el).innerHTML=p.lista.filter(x=>norm(x.nome+" "+x.partido.s+" "+(x.nomeCompleto||"")).includes(q)).map(x=>personRow(x)).join("");bindPeople(el)}});return}
+  if(p.grupo){const txtG=`Prezados(as) integrantes da ${p.nome},\n\nSou ${S.perfil.cidadeVoto?"eleitor(a) em "+S.perfil.cidadeVoto:"morador(a) de "+cidadeNome()} e escrevo para pedir sua atenção ao seguinte problema:\n\n[descreva o problema e o que espera dos seus mandatos]\n\nAtenciosamente,\n${S.perfil.nome}`;
+    openSheet(p.nome,`<p class="muted">${esc(p.cargo)} · Fonte: ${esc(p.fonte)}</p><details class="acc"><summary>Escrever para todos</summary><div class="body">${blocoEnvio([p],txtG,"gEnv")}</div></details><label class="f">Buscar<input type="search" id="gq" placeholder="Nome ou partido"></label><div class="list" id="gl">${p.lista.map(x=>personRow(x)).join("")}</div>`,el=>{
+    registerPeople(p.lista);bindPeople(el);bindEnvio(el,[p],"gEnv");$("#gq",el).oninput=e=>{const q=norm(e.target.value);$("#gl",el).innerHTML=p.lista.filter(x=>norm(x.nome+" "+x.partido.s+" "+(x.nomeCompleto||"")).includes(q)).map(x=>personRow(x)).join("");bindPeople(el)}});return}
   if(p.placeholder){openAlvo(p.alvo,p.cargo+(p.esfera==="municipal"?" — "+S.cidade.nome:p.esfera==="estadual"?" — "+(UFS[S.cidade.uf]||""):""),"titular");return}
   if(!p.real&&!p.crowd)return openPersonDemo(p);
   const aviso=p.real?valorDe("aviso|"+p.id):null;
@@ -1345,12 +1377,17 @@ function openPerson(p){
       ${d.pls.ult.length?`<h3>Projetos mais recentes</h3><div class="list">${d.pls.ult.map(x=>`<a class="item-btn" href="https://www.camara.leg.br/propostas-legislativas/${esc(x.id)}" target="_blank" rel="noopener" style="text-decoration:none"><span class="grow stack" style="gap:2px"><span class="row" style="gap:8px"><b class="mono">${esc(x.t)}</b><span class="pill ${x.st==="Virou lei"?"s-resolvida":x.st==="Em tramitação"?"s-enviada":"s-rascunho"}"><i></i>${esc(x.st)}</span></span><span class="muted" style="font-size:.88rem">${esc(x.ementa)}</span></span></a>`).join("")}</div>`:""}
       <h3>Votações recentes no plenário</h3>${d.votos.length?`<div class="list">${d.votos.map(v=>{const m=VOTO[v.v]||["aus",v.v||"—"];return `<div class="row"><span class="grow" style="font-size:.9rem">${esc(v.desc||"Votação nominal")}<br><span class="muted mono" style="font-size:.76rem">${esc(v.d)}</span></span><span class="vote ${m[0]}">${esc(m[1])}</span></div>`}).join("")}</div>`:`<p class="muted" style="font-size:.9rem">A Câmara não publicou votos individuais recentes nos dados abertos. Consulte a página oficial.</p>`}`
     :`<p class="muted" style="font-size:.9rem">${p.real?"Projetos e votações deste cargo ainda não estão integrados: cada Câmara Municipal e Assembleia publica em formato próprio.":""}</p>`}
-    ${p.url||p.email?`<div class="card stack" style="gap:6px">${p.url?`<a href="${esc(p.url)}" target="_blank" rel="noopener">Página oficial</a>`:""}${p.email?`<div class="row"><span class="mono grow" style="overflow-wrap:anywhere">${esc(p.email)}</span><button class="btn small" id="pEm">Copiar e-mail</button></div>`:""}</div>`:""}
-    <h3>Escrever para ${esc(p.nome.split(" ")[0])}</h3><div class="mail"><pre id="pMsg">${esc(msg)}</pre></div>
-    <div class="row"><button class="btn primary" id="pCopy">Copiar mensagem</button>
-    ${p.real?`<button class="btn ghost" id="pAviso">Informar que não está mais no cargo</button>`:`<button class="btn ghost" id="pHist">Ver histórico e conferências</button>`}</div>`,el=>{
-      $("#pCopy",el).onclick=()=>copyText(msg,$("#pMsg",el));
-      const em=$("#pEm",el);if(em)em.onclick=()=>copyText(p.email);
+    ${(()=>{const c=contatoDe(p);return `<div class="card stack" style="gap:8px"><h3>Contato</h3>
+      ${c.email?`<div class="row"><span class="mono grow" style="overflow-wrap:anywhere">${esc(c.email)}</span><button class="btn small" id="pEm">Copiar</button></div><span class="muted" style="font-size:.8rem">${c.emailOrigem==="oficial"?"E-mail da base oficial":"E-mail informado e conferido por moradores"}</span>`:""}
+      ${c.telefone?`<div class="row"><span class="mono grow">${esc(c.telefone)}</span><a class="btn small" href="tel:${esc(c.telefone.replace(/[^0-9+]/g,""))}">Ligar</a></div>`:""}
+      ${c.site?`<a href="${esc(c.site)}" target="_blank" rel="noopener">Página oficial</a>`:""}
+      ${!c.email&&!c.telefone?`<p class="muted" style="font-size:.88rem">Ainda sem e-mail ou telefone no app.${c.pend?` ${c.pend} ${c.pend>1?"sugestões aguardam":"sugestão aguarda"} conferência.`:""}</p>`:""}
+      <button class="btn small ghost" id="pContato" style="align-self:flex-start">${c.email||c.telefone?"Corrigir ou completar contato":"Informar contato do gabinete"}</button></div>`})()}
+    <h3>Escrever para ${esc(p.nome.split(" ")[0])}</h3>${blocoEnvio([p],msg,"pEnv")}
+    <div class="row">${p.real?`<button class="btn ghost" id="pAviso">Informar que não está mais no cargo</button>`:`<button class="btn ghost" id="pHist">Ver histórico e conferências</button>`}</div>`,el=>{
+      bindEnvio(el,[p],"pEnv");
+      const em=$("#pEm",el);if(em)em.onclick=()=>copyText(contatoDe(p).email);
+      $("#pContato",el).onclick=()=>{closeSheet();openContrib({alvo:"contato|"+p.id,campo:"contato",rotulo:`Contato: ${p.nome} — ${p.cargo}`})};
       const av=$("#pAviso",el);if(av)av.onclick=()=>{closeSheet();openContrib({alvo:"aviso|"+p.id,campo:"aviso",rotulo:`${p.nome} — ${p.cargo}`,ajuda:"Use só quando houver documento público: renúncia, cassação, licença ou posse de suplente. O alerta aparece na ficha depois de conferido; o dado oficial não é apagado."})};
       const hi=$("#pHist",el);if(hi)hi.onclick=()=>{closeSheet();openAlvo(p.crowd.alvo,p.cargo,"titular")};
     });
@@ -1422,7 +1459,7 @@ function openProp(id){
     <p><b>Ementa.</b> ${esc(p.ementa)}</p>${p.just?`<p><b>Justificativa.</b> ${esc(p.just)}</p>`:""}
     <div class="row"><button class="support" data-apoio="${esc(id)}" aria-pressed="${apoiei(id)}" style="flex-direction:row;gap:8px;padding:8px 14px"><b>${n}</b><small>${apoiei(id)?"Apoiado":"Apoiar"}</small></button><button class="btn" id="shr">Copiar convite para apoio</button></div>
     <h3>Enviar a parlamentares</h3><div class="list">${alvos.map(x=>personRow(x)).join("")}</div>
-    <div class="mail"><pre id="ofi">${esc(ofi)}</pre></div><button class="btn primary" id="ofiC">Copiar ofício</button>
+    <div class="mail"><pre id="ofi">${esc(ofi)}</pre></div><div class="row">${emailsDe(alvos).length?`<a class="btn primary" href="${esc(mailtoHref({bcc:emailsDe(alvos),subject:"Sugestão de projeto de lei: "+p.titulo,body:ofi}))}">Enviar por e-mail (${emailsDe(alvos).length})</a>`:""}<button class="btn" id="ofiC">Copiar ofício</button></div>
     <div class="why"><b>E se a Câmara não quiser?</b> A iniciativa popular permite protocolar o projeto diretamente: no município, com assinaturas de 5% do eleitorado; no Congresso, com 1% do eleitorado nacional, distribuído por pelo menos 5 estados e com no mínimo 0,3% dos eleitores de cada um.</div>
     ${Dados.disp?"":`<p class="muted" style="font-size:.82rem"><span class="pill demo">Demonstração</span> Parlamentares fictícios neste modo.</p>`}`,el=>{
       $("#shr",el).onclick=()=>copyText(share); $("#ofiC",el).onclick=()=>copyText(ofi,$("#ofi",el)); bindPeople(el);
