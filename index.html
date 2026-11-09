@@ -626,8 +626,9 @@ function openLoginSheet(motivo,depois){
     <p class="muted" style="font-size:.84rem">Seu nome e e-mail ficam guardados no seu aparelho e só entram nas mensagens que você decidir enviar identificado(a).</p>`,el=>{
       $("#fLogin",el).onsubmit=async e=>{e.preventDefault();const nome=$("#lgNome",el).value.trim(),email=$("#lgEmail",el).value.trim();
         if(!nome||!/^\S+@\S+\.\S+$/.test(email)){const er=$("#lgErr",el);er.hidden=false;er.textContent="Preencha seu nome e um e-mail válido, como nome@exemplo.com.";return}
-        const eraVisitante=visitante();
-        await Store.savePerfil({nome,email,via:"email",desde:Date.now()});try{localStorage.removeItem("cid.visitante")}catch(x){}
+        const eraVisitante=visitante(); const guard=lsGet("cid.guardado:"+norm(email),null);
+        if(guard){if(!S.online){S.reclamacoes=guard.rec||[];lsSet("cid.rec",S.reclamacoes)}Prog.d=Object.assign(Prog.d,guard.prog||{});lsSet("cid.prog",Prog.d);S.tutorialVisto=true;lsSet("cid.tut",true);try{localStorage.removeItem("cid.guardado:"+norm(email))}catch(x){}}
+        await Store.savePerfil(guard?{...guard.perfil,nome,email}:{nome,email,via:"email",desde:Date.now()});try{localStorage.removeItem("cid.visitante")}catch(x){}
         if(eraVisitante){S.tutorialVisto=true;lsSet("cid.tut",true)}
         closeSheet();toast("Conta criada. Bem-vindo(a)!");if(depois)depois()};
       setTimeout(()=>{const n=$("#lgNome",el);if(n)n.focus()},60);
@@ -1955,7 +1956,7 @@ function viewPerfil(){
   const p=S.perfil; const all=S.reclamacoes;
   const cnt=k=>all.filter(r=>statusOf(r).k===k).length;
   let list=all; if(perfFiltro!=="todas")list=all.filter(r=>statusOf(r).k===perfFiltro);
-  return `<div class="person"><span class="avatar" style="background:var(--accent);color:var(--accent-ink);width:56px;height:56px;font-size:1.2rem">${esc((p.nome||"?").split(" ").map(x=>x[0]).slice(0,2).join(""))}</span><div class="grow"><h2>${esc(p.nome)}</h2><span class="muted">Conta por e-mail · desde ${fmtDate(p.desde||Date.now())}</span></div></div>
+  return `<div class="person"><span class="avatar" style="background:var(--accent);color:var(--accent-ink);width:56px;height:56px;font-size:1.2rem">${esc((p.nome||"?").split(" ").map(x=>x[0]).slice(0,2).join(""))}</span><div class="grow"><h2>${esc(p.nome)}</h2><span class="muted">Conta por e-mail · desde ${fmtDate(p.desde||Date.now())}</span></div><button class="btn small" id="sairTopo">Sair</button></div>
   <div class="stat-row"><div class="stat"><b>${all.length}</b><span>Cobranças</span></div><div class="stat"><b>${cnt("respondida")+cnt("resolvida")}</b><span>Com resposta</span></div><div class="stat"><b>${cnt("resolvida")}</b><span>Resolvidas</span></div><div class="stat"><b>${cnt("vencida")}</b><span>Prazo vencido</span></div></div>
   <section class="stack"><div class="section-head"><h2>Histórico</h2></div>
     <div class="seg" role="group">${[["todas","Todas"],["enviada","Aguardando"],["respondida","Respondidas"],["resolvida","Resolvidas"],["vencida","Vencidas"]].map(([k,n])=>`<button data-pf2="${k}" aria-pressed="${perfFiltro===k}">${n}</button>`).join("")}</div>
@@ -1973,8 +1974,18 @@ function viewPerfil(){
       <button class="btn primary" type="submit">Salvar dados</button>
     </form></section>
   ${redeCard()}
-  <div class="row"><button class="btn ghost" id="sair">Sair da conta</button></div>
-  <div id="sairConf" hidden class="notice"><span class="grow">${S.online?"Sair apaga os dados deste aparelho. Suas cobranças continuam guardadas na sua conta.":"Sair apaga deste aparelho o perfil e todas as cobranças. Não dá para desfazer."}</span><button class="btn small" id="sairYes">Sair</button></div>`;
+  <div class="row"><button class="btn ghost" id="sair">Sair da conta</button></div>`;
+}
+function openSair(){
+  openSheet("Sair da conta",`<p>Escolha o que fazer com seus dados neste aparelho.</p>
+    <button class="btn primary block" id="sairGuardar">Sair e guardar meus dados</button>
+    <p class="muted" style="font-size:.86rem">Suas cobranças, seu perfil e seu progresso ficam guardados neste aparelho. Quando você entrar de novo com o mesmo e-mail, tudo volta.</p>
+    <button class="btn block" id="sairApagar">Sair e apagar meus dados deste aparelho</button>
+    <p class="muted" style="font-size:.86rem">Use num aparelho emprestado ou compartilhado. Suas cobranças e seu perfil são apagados daqui${S.online?"; o que está na sua conta continua lá":" e não dá para desfazer"}. O que você publicou no mural continua público, sem seu nome.</p>`,el=>{
+    const limpar=()=>{["cid.perfil","cid.tut","cid.rec","cid.prog","cid.visitante"].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});S.perfil=null;S.tutorialVisto=false;if(!S.online)S.reclamacoes=[];Prog.d={aulas:{},dias:[],escalou:{},acertos1:0,vistos:[]};closeSheet();location.hash="";render();toast("Você saiu da conta")};
+    $("#sairGuardar",el).onclick=()=>{const em=norm(S.perfil.email||"");if(em)lsSet("cid.guardado:"+em,{perfil:S.perfil,rec:S.online?[]:S.reclamacoes,prog:Prog.d,tut:true});limpar()};
+    $("#sairApagar",el).onclick=limpar;
+  });
 }
 function bindPerfil(){
   if(visitante()){$("#pfCriar").onclick=()=>openLoginSheet("criar sua conta",()=>render());bindBadges();return}
@@ -1982,8 +1993,7 @@ function bindPerfil(){
   bindRecItems(); bindBadges(); bindRede();
   $("#pfCpf").oninput=e=>{e.target.value=maskCpf(e.target.value)};
   $("#fPerf").onsubmit=async e=>{e.preventDefault();await Store.savePerfil({...S.perfil,nome:$("#pfNome").value.trim()||S.perfil.nome,email:$("#pfEmail").value.trim(),cpf:$("#pfCpf").value.trim(),telefone:$("#pfTel").value.trim(),cidadeVoto:$("#pfVoto").value.trim(),bairro:limpaRegiao($("#pfBai").value),rua:limpaRegiao($("#pfRua").value),cidadeCasa:S.cidade.nome});toast("Dados salvos");render()};
-  $("#sair").onclick=()=>{$("#sairConf").hidden=false};
-  $("#sairYes").onclick=()=>{["cid.perfil","cid.tut","cid.cidade","cid.rec"].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});S.perfil=null;S.tutorialVisto=false;S.cidade=null;if(!S.online)S.reclamacoes=[];location.hash="";render()};
+  $("#sair").onclick=openSair; $("#sairTopo").onclick=openSair;
 }
 
 /* ---------- início ---------- */
